@@ -793,7 +793,7 @@
           <div>
             <div style="font-weight:600;font-size:1rem;margin-bottom:0.4rem">Pratheeksh Kumar SP</div>
             <div style="color:var(--text-dim);font-size:0.9rem;margin-bottom:0.3rem">
-              📧 <a href="/cdn-cgi/l/email-protection#f38083838192879b969698809bc2b3949e929a9fdd909c9e" style="color:var(--text-dim);text-decoration:none"><span class="__cf_email__" data-cfemail="f78487878596839f92929c849fc6b7909a969e9bd994989a">[email&#160;protected]</span></a>
+              📧 <a id="contact-email-link" href="#" style="color:var(--text-dim);text-decoration:none"></a>
             </div>
             <div style="color:var(--text-dim);font-size:0.9rem">
               📞 <a href="tel:+917994946987" style="color:var(--text-dim);text-decoration:none">+91 799 494 6987</a>
@@ -1821,4 +1821,27 @@ async function init() {
   // Restore session if already logged in
   const { data: { session } } = await sb.auth.getSession();
   if (session) {
-    currentU
+    currentUser = session.user;
+    isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+  }
+  updateAuthUI();
+
+  // Build contact email at runtime to avoid Cloudflare obfuscation
+  const cemailEl = document.getElementById('contact-email-link');
+  if (cemailEl) {
+    const e = ['sppratheeksh1','gmail.com'].join('@');
+    cemailEl.href = 'mailto:' + e;
+    cemailEl.textContent = e;
+  }
+
+  // Start on home page
+  showPage('home');
+
+  // Pre-load data in background
+  await loadAllData();
+}
+
+init();
+</script>
+</body>
+</html>
