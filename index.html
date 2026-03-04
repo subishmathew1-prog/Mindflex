@@ -705,10 +705,13 @@
   <div class="logo">MindFlex<span>Gym Academy · IST</span></div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home')">Home</button>
-    <button class="nav-tab admin-tab" onclick="showPage('schedule')" style="display:none">Schedule</button>
+    <button class="nav-tab" id="schedule-tab" onclick="showPage('schedule')" style="display:none">Schedule</button>
     <button class="nav-tab admin-tab" onclick="showPage('students')" style="display:none">Students</button>
     <button class="nav-tab admin-tab" onclick="showPage('sessions')" style="display:none">Sessions</button>
-    <button class="nav-tab" onclick="showPage('login')" id="login-nav-tab">Login</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-left:auto">
+    <span id="auth-label" style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:1px;color:var(--text-muted)"></span>
+    <button id="login-nav-tab" class="btn btn-sm" onclick="showPage('login')" style="white-space:nowrap">Login</button>
   </div>
 </header>
 
@@ -795,17 +798,7 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem">
-        <div class="home-feature-card" onclick="showPage('login')">
-          <div class="home-feature-icon">⚡</div>
-          <div class="home-feature-title">Admin</div>
-          <div class="home-feature-desc">Login to manage students & sessions</div>
-        </div>
-        <div class="home-feature-card" onclick="showPage('schedule')">
-          <div class="home-feature-icon">📅</div>
-          <div class="home-feature-title">Schedule</div>
-          <div class="home-feature-desc">View weekly class schedule</div>
-        </div>
+      <div id="home-feature-cards" style="display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:2rem">
       </div>
 
       <div id="home-admin-banner" style="display:none;background:rgba(232,255,0,0.08);border:1px solid rgba(232,255,0,0.25);border-radius:4px;padding:1rem 1.25rem;text-align:left">
@@ -843,7 +836,7 @@
   <!-- ========== LOGIN PAGE ========== -->
   <div id="page-login" class="page">
     <div style="max-width:400px;margin:4rem auto;padding:0 1rem">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--accent);margin-bottom:0.25rem">Admin Login</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--accent);margin-bottom:0.25rem">Login</div>
       <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2rem">MindFlex Gym Academy</div>
 
       <div id="login-logged-in" style="display:none;background:rgba(232,255,0,0.08);border:1px solid rgba(232,255,0,0.25);border-radius:4px;padding:1.5rem;text-align:center">
@@ -1746,7 +1739,7 @@ async function doLogin() {
   isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
   updateAuthUI();
   renderAll();
-  toast(isAdmin ? 'Welcome, Admin!' : 'Logged in.');
+  toast('Welcome back!');
   showPage('home');
 }
 
@@ -1761,13 +1754,49 @@ async function doLogout() {
 }
 
 function updateAuthUI() {
-  // Admin-only nav tabs
+  const label = document.getElementById('auth-label');
+  const loginBtn = document.getElementById('login-nav-tab');
+
+  if (currentUser) {
+    label.textContent = currentUser.email.split('@')[0];
+    label.style.color = 'var(--text-muted)';
+    loginBtn.textContent = 'Logout';
+    loginBtn.onclick = doLogout;
+  } else {
+    label.textContent = '';
+    loginBtn.textContent = 'Login';
+    loginBtn.onclick = () => showPage('login');
+  }
+
+  // Schedule tab — visible to all logged-in users
+  const scheduleTab = document.getElementById('schedule-tab');
+  if (scheduleTab) scheduleTab.style.display = currentUser ? '' : 'none';
+
+  // Admin-only nav tabs (Students, Sessions)
   document.querySelectorAll('.admin-tab').forEach(t => t.style.display = isAdmin ? '' : 'none');
 
-  // Login tab label
-  const loginTab = document.getElementById('login-nav-tab');
-  if (loginTab) loginTab.textContent = currentUser ? 'Logout' : 'Login';
-  if (loginTab) loginTab.onclick = currentUser ? doLogout : () => showPage('login');
+  // Home feature cards
+  const cards = document.getElementById('home-feature-cards');
+  if (cards) {
+    if (currentUser) {
+      cards.style.gridTemplateColumns = isAdmin ? '1fr 1fr' : '1fr';
+      cards.innerHTML = `
+        <div class="home-feature-card" onclick="showPage('schedule')">
+          <div class="home-feature-icon">📅</div>
+          <div class="home-feature-title">Schedule</div>
+          <div class="home-feature-desc">View weekly class schedule</div>
+        </div>
+        ${isAdmin ? `
+        <div class="home-feature-card" onclick="showPage('students')">
+          <div class="home-feature-icon">👥</div>
+          <div class="home-feature-title">Students</div>
+          <div class="home-feature-desc">Manage enrolled students</div>
+        </div>` : ''}`;
+    } else {
+      cards.style.gridTemplateColumns = '1fr';
+      cards.innerHTML = '';
+    }
+  }
 
   // Login page state
   const formWrap = document.getElementById('login-form-wrap');
@@ -1781,7 +1810,7 @@ function updateAuthUI() {
   const banner = document.getElementById('home-admin-banner');
   if (banner) banner.style.display = isAdmin ? 'block' : 'none';
 
-  // Show/hide admin-only form sections
+  // Admin-only form sections
   const addStu = document.getElementById('admin-add-student');
   const addSess = document.getElementById('admin-add-session');
   if (addStu) addStu.style.display = isAdmin ? 'block' : 'none';
@@ -1940,4 +1969,4 @@ async function init() {
 init();
 </script>
 </body>
-</html><!DOCTYPE html>
+</html>
