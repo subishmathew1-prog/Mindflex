@@ -678,7 +678,7 @@
     align-items: stretch;
     gap: 0;
     min-height: 48px;
-    margin-bottom: 2px;
+    margin-bottom: 0;
   }
   .grid-time-label {
     width: 70px;
@@ -761,11 +761,12 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 3px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0;
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 0.8rem;
     letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
   }
   .avail-slot-time { width: 80px; color: var(--text-muted); flex-shrink: 0; }
   .avail-slot-bar { flex: 1; height: 28px; border-radius: 2px; display: flex; align-items: center; padding: 0 0.75rem; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
@@ -1108,18 +1109,20 @@
       <div class="section-title">Instructor <span>Availability</span></div>
       <div class="section-subtitle">Booked = active session · Blocked = personal time · Available = open slot</div>
 
-      <!-- Day selector -->
-      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem" id="avail-day-tabs">
+      <!-- 7-day grid -->
+      <div id="avail-grid" style="overflow-x:auto">
         <!-- rendered by JS -->
       </div>
 
-      <!-- Time grid -->
-      <div id="avail-grid" style="display:flex;flex-direction:column;gap:0.3rem"></div>
-
       <!-- Block time form (admin only) -->
+      <div id="avail-add-block-btn" style="display:none;margin-top:1.5rem">
+        <button class="btn btn-primary" onclick="document.getElementById('avail-block-form').style.display='block';this.parentElement.style.display='none'">+ Block Personal Time</button>
+      </div>
+
       <div id="avail-block-form" style="display:none;margin-top:1.5rem">
         <div class="card">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem">Block Personal Time</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.5rem">Block Personal Time</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--accent);letter-spacing:1px;margin-bottom:1rem" id="block-day-label"></div>
           <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
             <div class="form-group">
               <label>Day</label>
@@ -1140,7 +1143,10 @@
             <label>Reason (optional)</label>
             <input type="text" id="block-reason" placeholder="e.g. Personal appointment, Rest day...">
           </div>
-          <button class="btn btn-primary" onclick="addBlock()">Block Time</button>
+          <div style="display:flex;gap:0.75rem">
+            <button class="btn btn-primary" onclick="addBlock()">Block Time</button>
+            <button class="btn btn-sm" onclick="document.getElementById('avail-block-form').style.display='none';document.getElementById('avail-add-block-btn').style.display='block'">Cancel</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1873,107 +1879,130 @@ async function loadBlockedTimes() {
 }
 
 function renderAvailability() {
-  // Day buttons
-  const dayTabs = document.getElementById('avail-day-tabs');
-  dayTabs.innerHTML = DAYS.map(d =>
-    `<button class="avail-day-btn ${d === availSelectedDay ? 'active' : ''}" onclick="selectAvailDay('${d}')">${d.slice(0,3)}</button>`
-  ).join('');
-
-  // Block form day select
+  // Populate day dropdown
   const blockDaySel = document.getElementById('block-day');
-  if (blockDaySel && !blockDaySel.options.length > 1) {
+  if (blockDaySel && blockDaySel.options.length <= 1) {
     blockDaySel.innerHTML = '<option value="">Select day...</option>' + DAYS.map(d => `<option value="${d}">${d}</option>`).join('');
   }
 
-  // Show block form for admins only
+  // Show/hide add block button
+  const addBlockBtn = document.getElementById('avail-add-block-btn');
+  if (addBlockBtn) addBlockBtn.style.display = isAdmin ? 'block' : 'none';
+
   const blockForm = document.getElementById('avail-block-form');
-  if (blockForm) blockForm.style.display = isAdmin ? 'block' : 'none';
+  if (blockForm && blockForm.style.display !== 'block') blockForm.style.display = 'none';
 
   renderAvailGrid();
 }
 
 function selectAvailDay(day) {
   availSelectedDay = day;
-  renderAvailability();
+}
+
+function openBlockForm(day, from) {
+  availSelectedDay = day;
+  const [h] = from.split(':').map(Number);
+  const to = `${String(h + 1).padStart(2,'0')}:00`;
+  const daySel = document.getElementById('block-day');
+  if (daySel) daySel.value = day;
+  document.getElementById('block-from').value = from;
+  document.getElementById('block-to').value = to;
+  document.getElementById('block-reason').value = '';
+  document.getElementById('block-day-label').textContent = '';
+  const addBtn = document.getElementById('avail-add-block-btn');
+  if (addBtn) addBtn.style.display = 'none';
+  const blockForm = document.getElementById('avail-block-form');
+  blockForm.style.display = 'block';
+  blockForm.scrollIntoView({ behavior: 'smooth' });
 }
 
 function renderAvailGrid() {
   const grid = document.getElementById('avail-grid');
-  const day = availSelectedDay;
 
-  // Build 30-min slots from 5am to 11pm
-  const slots = [];
-  for (let h = 5; h < 23; h++) {
-    slots.push(`${String(h).padStart(2,'0')}:00`);
-    slots.push(`${String(h).padStart(2,'0')}:30`);
+  // Hours from 4am to 3:30am (next day)
+  const hours = [];
+  for (let i = 0; i < 48; i++) {
+    const totalMin = (0 * 60) + (i * 30);
+    const h = Math.floor(totalMin / 60) % 24;
+    const m = totalMin % 60;
+    hours.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
   }
 
-  // Booked times from sessions
-  const daySessions = sessions.filter(s => s.days.includes(day));
-  const bookedSlots = new Set();
-  daySessions.forEach(sess => {
-    const [sh, sm] = sess.timeIST.split(':').map(Number);
-    const start = sh * 60 + sm;
-    // Mark session as 1 hour
-    for (let i = 0; i < 2; i++) {
-      const t = start + i * 30;
-      const hh = Math.floor(t / 60);
-      const mm = t % 60;
-      bookedSlots.add(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`);
-    }
+  // Build booked/blocked maps per day
+  const bookedMap = {}; // day -> Set of slots
+  const blockedMap = {}; // day -> Map slot->block
+  DAYS.forEach(day => {
+    bookedMap[day] = new Set();
+    blockedMap[day] = new Map();
+    sessions.filter(s => s.days.includes(day)).forEach(sess => {
+      const [sh, sm] = sess.timeIST.split(':').map(Number);
+      const start = sh * 60 + sm;
+      for (let i = 0; i < 2; i++) {
+        const t = start + i * 30;
+        const hh = Math.floor(t/60); const mm = t % 60;
+        bookedMap[day].add(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`);
+      }
+    });
+    blockedTimes.filter(b => b.day === day).forEach(b => {
+      const [fh,fm] = b.from.split(':').map(Number);
+      const [th,tm] = b.to.split(':').map(Number);
+      let cur = fh*60+fm;
+      while (cur < th*60+tm) {
+        const hh = Math.floor(cur/60); const mm = cur%60;
+        blockedMap[day].set(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`, b);
+        cur += 30;
+      }
+    });
   });
 
-  // Blocked times for this day
-  const dayBlocks = blockedTimes.filter(b => b.day === day);
-  const blockedSlots = new Map(); // slot -> reason
-  dayBlocks.forEach(b => {
-    const [fh, fm] = b.from.split(':').map(Number);
-    const [th, tm] = b.to.split(':').map(Number);
-    let cur = fh * 60 + fm;
-    const end = th * 60 + tm;
-    while (cur < end) {
-      const hh = Math.floor(cur / 60);
-      const mm = cur % 60;
-      blockedSlots.set(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`, b);
-      cur += 30;
-    }
-  });
+  // Build table
+  const colW = 110;
+  const timeW = 60;
 
-  grid.innerHTML = slots.map(slot => {
-    const [h] = slot.split(':').map(Number);
+  const headerCells = DAYS.map(d =>
+    `<th style="width:${colW}px;min-width:${colW}px;padding:0.5rem 0.25rem;font-family:'Bebas Neue',sans-serif;font-size:0.9rem;letter-spacing:2px;color:var(--accent);text-align:center;border-bottom:2px solid var(--border)">${d.slice(0,3)}</th>`
+  ).join('');
+
+  const rows = hours.map(slot => {
+    const [h, m] = slot.split(':').map(Number);
     const ampm = h >= 12 ? 'PM' : 'AM';
     const hh = h % 12 === 0 ? 12 : h % 12;
-    const mm = slot.split(':')[1];
-    const label = `${hh}:${mm} ${ampm}`;
+    const label = `${hh}:${String(m).padStart(2,'0')}${m === 0 ? ` ${ampm}` : ''}`;
 
-    if (bookedSlots.has(slot)) {
-      const sess = daySessions.find(s => s.timeIST.slice(0,5) === slot);
-      const name = sess ? sess.name : 'Session';
-      return `<div class="avail-slot">
-        <div class="avail-slot-time">${label}</div>
-        <div class="avail-slot-bar booked">📅 ${name}</div>
-      </div>`;
-    } else if (blockedSlots.has(slot)) {
-      const block = blockedSlots.get(slot);
-      const deleteBtn = isAdmin ? `<button onclick="removeBlock(${block.id})" style="margin-left:auto;background:none;border:none;color:#ff4500;cursor:pointer;font-size:0.75rem;padding:0">✕ Remove</button>` : '';
-      return `<div class="avail-slot">
-        <div class="avail-slot-time">${label}</div>
-        <div class="avail-slot-bar blocked" style="justify-content:space-between">
-          <span>🚫 ${block.reason || 'Blocked'}</span>
-          ${deleteBtn}
-        </div>
-      </div>`;
-    } else {
-      return `<div class="avail-slot">
-        <div class="avail-slot-time">${label}</div>
-        <div class="avail-slot-bar available">Available</div>
-      </div>`;
-    }
+    const cells = DAYS.map(day => {
+      if (bookedMap[day].has(slot)) {
+        const sess = sessions.find(s => s.days.includes(day) && s.timeIST.slice(0,5) === slot);
+        const name = sess ? sess.name.replace('Session ','') : '';
+        return `<td style="padding:1px;background:rgba(232,255,0,0.1);border:1px solid rgba(232,255,0,0.2);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;text-align:center;vertical-align:middle">📅 ${name}</td>`;
+      } else if (blockedMap[day].has(slot)) {
+        const block = blockedMap[day].get(slot);
+        const rm = isAdmin ? `<span onclick="removeBlock(${block.id})" style="cursor:pointer;opacity:0.7"> ✕</span>` : '';
+        return `<td style="padding:1px;background:rgba(255,69,0,0.1);border:1px solid rgba(255,69,0,0.2);color:#ff6b35;font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;text-align:center;vertical-align:middle">🚫 ${block.reason||'Blocked'}${rm}</td>`;
+      } else {
+        const clickable = isAdmin ? `onclick="openBlockForm('${day}','${slot}')" style="cursor:pointer"` : '';
+        return `<td ${clickable} style="padding:1px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:0.6rem;text-align:center;vertical-align:middle;${isAdmin?'cursor:pointer':''}"></td>`;
+      }
+    }).join('');
+
+    return `<tr>
+      <td style="width:${timeW}px;padding:0 0.5rem 0 0;font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:1px;color:var(--text-muted);text-align:right;white-space:nowrap;vertical-align:middle">${label}</td>
+      ${cells}
+    </tr>`;
   }).join('');
+
+  grid.innerHTML = `<table style="border-collapse:collapse;width:100%;min-width:${timeW + colW*7}px">
+    <thead>
+      <tr>
+        <th style="width:${timeW}px"></th>
+        ${headerCells}
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 async function addBlock() {
-  const day    = document.getElementById('block-day').value;
+  const day    = document.getElementById('block-day').value || availSelectedDay;
   const from   = document.getElementById('block-from').value;
   const to     = document.getElementById('block-to').value;
   const reason = document.getElementById('block-reason').value.trim();
@@ -1985,13 +2014,14 @@ async function addBlock() {
 
   try {
     const { data, error } = await sb.from('blocked_times').insert({ day, from_time: from, to_time: to, reason }).select();
-    if (error) throw error;
+    if (error) { console.error('Supabase error:', JSON.stringify(error)); throw error; }
     blockedTimes.push({ id: data[0].id, day, from, to, reason });
-    availSelectedDay = day;
     document.getElementById('block-day').value = '';
     document.getElementById('block-from').value = '';
     document.getElementById('block-to').value = '';
     document.getElementById('block-reason').value = '';
+    document.getElementById('avail-block-form').style.display = 'none';
+    document.getElementById('avail-add-block-btn').style.display = 'block';
     renderAvailability();
     toast('Time blocked!');
   } catch(e) { toast('Error blocking time.', true); console.error(e); }
@@ -2045,21 +2075,22 @@ function renderDayGrid(day) {
   const blockForm = document.getElementById('day-block-form');
   if (blockForm) blockForm.style.display = isAdmin ? 'block' : 'none';
 
-  // Build hourly slots 5:00 AM – 11:00 PM
-  const slots = [];
-  for (let h = 5; h <= 23; h++) {
+  const daySessions = sessions.filter(s => s.days.includes(day));
+  const html = [];
+
+  // 4:00 AM to 3:00 AM next day (24 hourly slots)
+  for (let i = 0; i < 24; i++) {
+    const totalMin = (0 * 60) + (i * 60);
+    const h = Math.floor(totalMin / 60) % 24;
     const timeStr = `${String(h).padStart(2,'0')}:00`;
     const label = formatTime(h, 0);
     const endLabel = formatTime((h + 1) % 24, 0);
 
-    // Check if a session is booked at this hour
-    const daySessions = sessions.filter(s => s.days.includes(day));
     const bookedSess = daySessions.find(s => {
       const [sh] = s.timeIST.split(':').map(Number);
       return sh === h;
     });
 
-    // Check if blocked
     const blocked = (blockedTimes || []).find(b =>
       b.day === day && b.from === timeStr
     );
@@ -2081,7 +2112,7 @@ function renderDayGrid(day) {
       content = `<span style="opacity:0.4">${label} – ${endLabel} &nbsp; Available</span>`;
     }
 
-    slots.push(`
+    html.push(`
       <div class="grid-slot">
         <div class="grid-time-label">${label}</div>
         <div class="grid-slot-bar ${cls}"
@@ -2091,7 +2122,7 @@ function renderDayGrid(day) {
       </div>`);
   }
 
-  grid.innerHTML = slots.join('');
+  grid.innerHTML = html.join('');
 }
 
 function prefillBlockTime(from) {
@@ -2502,9 +2533,6 @@ async function init() {
 
   // Load blocked times from local storage
   try { blockedTimes = JSON.parse(localStorage.getItem('blockedTimes') || '[]'); } catch(e) { blockedTimes = []; }
-
-  // Try to autoplay music
-  tryAutoplay();
 }
 
 init();
