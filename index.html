@@ -1919,28 +1919,28 @@ function openBlockForm(day, from) {
 function renderAvailGrid() {
   const grid = document.getElementById('avail-grid');
 
-  // Hours from 4am to 3:30am (next day)
+  // 30-min slots: 12:00am to 11:30pm (48 slots)
   const hours = [];
   for (let i = 0; i < 48; i++) {
-    const totalMin = (0 * 60) + (i * 30);
+    const totalMin = i * 30;
     const h = Math.floor(totalMin / 60) % 24;
     const m = totalMin % 60;
     hours.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
   }
 
   // Build booked/blocked maps per day
-  const bookedMap = {}; // day -> Set of slots
-  const blockedMap = {}; // day -> Map slot->block
+  const bookedMap = {};
+  const blockedMap = {};
   DAYS.forEach(day => {
-    bookedMap[day] = new Set();
-    blockedMap[day] = new Map();
+    bookedMap[day] = new Map(); // slot -> sess
+    blockedMap[day] = new Map(); // slot -> block
     sessions.filter(s => s.days.includes(day)).forEach(sess => {
       const [sh, sm] = sess.timeIST.split(':').map(Number);
       const start = sh * 60 + sm;
       for (let i = 0; i < 2; i++) {
         const t = start + i * 30;
         const hh = Math.floor(t/60); const mm = t % 60;
-        bookedMap[day].add(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`);
+        bookedMap[day].set(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`, sess);
       }
     });
     blockedTimes.filter(b => b.day === day).forEach(b => {
@@ -1955,7 +1955,35 @@ function renderAvailGrid() {
     });
   });
 
-  // Build table
+  // Pre-calculate rowspans per day per slot
+  // skippedCells[day][slot] = true means this cell is absorbed by a rowspan above
+  const skippedCells = {};
+  const rowspanInfo = {}; // day -> slot -> {span, type, data}
+  DAYS.forEach(day => {
+    skippedCells[day] = new Set();
+    rowspanInfo[day] = {};
+    hours.forEach((slot, idx) => {
+      if (skippedCells[day].has(slot)) return;
+      const isBooked = bookedMap[day].has(slot);
+      const isBlocked = blockedMap[day].has(slot);
+      if (!isBooked && !isBlocked) return;
+      const getId = s => isBooked ? bookedMap[day].get(s)?.id : blockedMap[day].get(s)?.id;
+      const baseId = getId(slot);
+      let span = 1;
+      for (let j = idx + 1; j < hours.length; j++) {
+        const nextSlot = hours[j];
+        const nextBooked = bookedMap[day].has(nextSlot);
+        const nextBlocked = blockedMap[day].has(nextSlot);
+        const sameType = (isBooked && nextBooked) || (isBlocked && nextBlocked);
+        if (sameType && getId(nextSlot) === baseId) {
+          span++;
+          skippedCells[day].add(nextSlot);
+        } else break;
+      }
+      rowspanInfo[day][slot] = { span, booked: isBooked, blocked: isBlocked };
+    });
+  });
+
   const colW = 110;
   const timeW = 60;
 
@@ -1970,16 +1998,21 @@ function renderAvailGrid() {
     const label = `${hh}:${String(m).padStart(2,'0')}${m === 0 ? ` ${ampm}` : ''}`;
 
     const cells = DAYS.map(day => {
+      if (skippedCells[day].has(slot)) return ''; // absorbed by rowspan
+
+      const info = rowspanInfo[day]?.[slot];
+      const rowspanAttr = info && info.span > 1 ? `rowspan="${info.span}"` : '';
+
       if (bookedMap[day].has(slot)) {
-        const sess = sessions.find(s => s.days.includes(day) && s.timeIST.slice(0,5) === slot);
-        const name = sess ? sess.name.replace('Session ','') : '';
-        return `<td style="padding:1px;background:rgba(232,255,0,0.1);border:1px solid rgba(232,255,0,0.2);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;text-align:center;vertical-align:middle">📅 ${name}</td>`;
+        const sess = bookedMap[day].get(slot);
+        const studNames = sess ? sess.studentIds.map(id => students.find(s=>s.id===id)?.name || '?').join(', ') : '';
+        return `<td ${rowspanAttr} style="padding:2px 4px;background:rgba(232,255,0,0.1);border:1px solid rgba(232,255,0,0.25);color:var(--accent);font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;text-align:center;vertical-align:middle">📅 ${studNames}</td>`;
       } else if (blockedMap[day].has(slot)) {
         const block = blockedMap[day].get(slot);
-        const rm = isAdmin ? `<span onclick="removeBlock(${block.id})" style="cursor:pointer;opacity:0.7"> ✕</span>` : '';
-        return `<td style="padding:1px;background:rgba(255,69,0,0.1);border:1px solid rgba(255,69,0,0.2);color:#ff6b35;font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;text-align:center;vertical-align:middle">🚫 ${block.reason||'Blocked'}${rm}</td>`;
+        const rm = isAdmin ? `<br><span onclick="removeBlock(${block.id})" style="cursor:pointer;opacity:0.6;font-size:0.6rem">✕ Remove</span>` : '';
+        return `<td ${rowspanAttr} style="padding:2px 4px;background:rgba(255,69,0,0.1);border:1px solid rgba(255,69,0,0.25);color:#ff6b35;font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;text-align:center;vertical-align:middle">🚫 ${block.reason||'Blocked'}${rm}</td>`;
       } else {
-        const clickable = isAdmin ? `onclick="openBlockForm('${day}','${slot}')" style="cursor:pointer"` : '';
+        const clickable = isAdmin ? `onclick="openBlockForm('${day}','${slot}')"` : '';
         return `<td ${clickable} style="padding:1px;background:var(--surface);border:1px solid var(--border);color:var(--text-muted);font-size:0.6rem;text-align:center;vertical-align:middle;${isAdmin?'cursor:pointer':''}"></td>`;
       }
     }).join('');
