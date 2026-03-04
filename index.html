@@ -673,6 +673,54 @@
   .detail-workouts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 
   /* Home feature cards */
+  .sub-tab {
+    padding: 0.5rem 1.25rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: -1px;
+  }
+  .sub-tab:hover { color: var(--text); }
+  .sub-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .avail-day-btn {
+    padding: 0.4rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .avail-day-btn:hover, .avail-day-btn.active { border-color: var(--accent); color: var(--accent); }
+
+  .avail-slot {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+  }
+  .avail-slot-time { width: 80px; color: var(--text-muted); flex-shrink: 0; }
+  .avail-slot-bar { flex: 1; height: 28px; border-radius: 2px; display: flex; align-items: center; padding: 0 0.75rem; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+  .avail-slot-bar.booked { background: rgba(232,255,0,0.15); border-left: 3px solid var(--accent); color: var(--accent); }
+  .avail-slot-bar.blocked { background: rgba(255,69,0,0.12); border-left: 3px solid #ff4500; color: #ff4500; }
+  .avail-slot-bar.available { background: rgba(255,255,255,0.04); border-left: 3px solid #2a2a2a; color: var(--text-muted); }
   .home-feature-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -942,23 +990,72 @@
 
   <!-- ========== SCHEDULE PAGE ========== -->
   <div id="page-schedule" class="page active">
-    <!-- Day overview grid -->
-    <div id="schedule-overview">
-      <div class="section-title">Weekly <span>Schedule</span></div>
-      <div class="section-subtitle">Select a day to view the full schedule</div>
-      <div class="days-overview-grid" id="days-overview-grid"></div>
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:0.25rem;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0">
+      <button class="sub-tab active" id="subtab-schedule" onclick="showSubTab('schedule')">Schedule</button>
+      <button class="sub-tab" id="subtab-availability" onclick="showSubTab('availability')">Availability</button>
     </div>
 
-    <!-- Day detail panel (hidden until a day is clicked) -->
-    <div id="schedule-detail" style="display:none">
-      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
-        <button class="btn btn-sm" onclick="closeDayDetail()" style="font-size:0.8rem">← Back</button>
-        <div>
-          <div class="section-title" id="detail-day-title" style="margin-bottom:0"></div>
-          <div class="section-subtitle" style="margin-bottom:0">All times shown in local timezone + IST</div>
+    <!-- ── SCHEDULE SUB-TAB ── -->
+    <div id="sub-schedule">
+      <div id="schedule-overview">
+        <div class="section-title">Weekly <span>Schedule</span></div>
+        <div class="section-subtitle">Select a day to view the full schedule</div>
+        <div class="days-overview-grid" id="days-overview-grid"></div>
+      </div>
+      <div id="schedule-detail" style="display:none">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+          <button class="btn btn-sm" onclick="closeDayDetail()" style="font-size:0.8rem">← Back</button>
+          <div>
+            <div class="section-title" id="detail-day-title" style="margin-bottom:0"></div>
+            <div class="section-subtitle" style="margin-bottom:0">All times shown in local timezone + IST</div>
+          </div>
+        </div>
+        <div id="detail-student-list"></div>
+      </div>
+    </div>
+
+    <!-- ── AVAILABILITY SUB-TAB ── -->
+    <div id="sub-availability" style="display:none">
+      <div class="section-title">Instructor <span>Availability</span></div>
+      <div class="section-subtitle">Booked = active session · Blocked = personal time · Available = open slot</div>
+
+      <!-- Day selector -->
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem" id="avail-day-tabs">
+        <!-- rendered by JS -->
+      </div>
+
+      <!-- Time grid -->
+      <div id="avail-grid" style="display:flex;flex-direction:column;gap:0.3rem"></div>
+
+      <!-- Block time form (admin only) -->
+      <div id="avail-block-form" style="display:none;margin-top:1.5rem">
+        <div class="card">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem">Block Personal Time</div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem">
+            <div class="form-group">
+              <label>Day</label>
+              <select id="block-day">
+                <option value="">Select day...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>From</label>
+              <input type="time" id="block-from">
+            </div>
+            <div class="form-group">
+              <label>To</label>
+              <input type="time" id="block-to">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Reason (optional)</label>
+            <input type="text" id="block-reason" placeholder="e.g. Personal appointment, Rest day...">
+          </div>
+          <button class="btn btn-primary" onclick="addBlock()">Block Time</button>
         </div>
       </div>
-      <div id="detail-student-list"></div>
     </div>
   </div>
 
@@ -1173,6 +1270,7 @@ async function loadAllData() {
     const [stuRows, sessRows] = await Promise.all([ sbGet('students'), sbGet('sessions') ]);
     students = stuRows.map(mapStudent);
     sessions = sessRows.map(mapSession);
+    await loadBlockedTimes();
   } catch(e) {
     console.error(e);
     toast('Could not connect to database: ' + e.message, true);
@@ -1213,6 +1311,21 @@ function formatTime(h, m) {
 function istTo12(istTime) {
   const [h, m] = istTime.split(':').map(Number);
   return formatTime(h, m);
+}
+
+function addOneHour(istTime) {
+  const [h, m] = istTime.split(':').map(Number);
+  const total = ((h * 60 + m + 60) % 1440);
+  return formatTime(Math.floor(total / 60), total % 60);
+}
+
+function istToLocalEndTime(istTime, tzOffset) {
+  const [h, m] = istTime.split(':').map(Number);
+  let totalMin = h * 60 + m + 60; // +1 hour
+  const diffMin = (tzOffset - IST_OFFSET) * 60;
+  totalMin += diffMin;
+  totalMin = ((totalMin % 1440) + 1440) % 1440;
+  return formatTime(Math.floor(totalMin / 60), totalMin % 60);
 }
 
 // Returns the weekday name after applying timezone offset to an IST time+day
@@ -1637,7 +1750,7 @@ function renderSessionsList() {
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
         <div style="flex:1">
           <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text)">${sess.name}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--accent);letter-spacing:2px;margin-bottom:0.5rem">IST ${istTo12(sess.timeIST)}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--accent);letter-spacing:2px;margin-bottom:0.5rem">IST ${istTo12(sess.timeIST)} – ${addOneHour(sess.timeIST)}</div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem">${dayBadges}</div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.4rem">${wBadges}</div>
           <div style="font-size:0.82rem;color:var(--text-muted)">Students: <span style="color:var(--text-dim)">${studNames}</span></div>
@@ -1649,6 +1762,161 @@ function renderSessionsList() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ============================================================
+// AVAILABILITY
+// ============================================================
+let blockedTimes = []; // { id, day, from, to, reason }
+let availSelectedDay = 'Monday';
+
+function showSubTab(tab) {
+  document.getElementById('sub-schedule').style.display = tab === 'schedule' ? 'block' : 'none';
+  document.getElementById('sub-availability').style.display = tab === 'availability' ? 'block' : 'none';
+  document.getElementById('subtab-schedule').classList.toggle('active', tab === 'schedule');
+  document.getElementById('subtab-availability').classList.toggle('active', tab === 'availability');
+  if (tab === 'availability') renderAvailability();
+}
+
+async function loadBlockedTimes() {
+  try {
+    const { data, error } = await sb.from('blocked_times').select('*').order('from_time');
+    if (!error) blockedTimes = data.map(r => ({ id: r.id, day: r.day, from: r.from_time, to: r.to_time, reason: r.reason || '' }));
+  } catch(e) { console.warn('Could not load blocked times', e); }
+}
+
+function renderAvailability() {
+  // Day buttons
+  const dayTabs = document.getElementById('avail-day-tabs');
+  dayTabs.innerHTML = DAYS.map(d =>
+    `<button class="avail-day-btn ${d === availSelectedDay ? 'active' : ''}" onclick="selectAvailDay('${d}')">${d.slice(0,3)}</button>`
+  ).join('');
+
+  // Block form day select
+  const blockDaySel = document.getElementById('block-day');
+  if (blockDaySel && !blockDaySel.options.length > 1) {
+    blockDaySel.innerHTML = '<option value="">Select day...</option>' + DAYS.map(d => `<option value="${d}">${d}</option>`).join('');
+  }
+
+  // Show block form for admins only
+  const blockForm = document.getElementById('avail-block-form');
+  if (blockForm) blockForm.style.display = isAdmin ? 'block' : 'none';
+
+  renderAvailGrid();
+}
+
+function selectAvailDay(day) {
+  availSelectedDay = day;
+  renderAvailability();
+}
+
+function renderAvailGrid() {
+  const grid = document.getElementById('avail-grid');
+  const day = availSelectedDay;
+
+  // Build 30-min slots from 5am to 11pm
+  const slots = [];
+  for (let h = 5; h < 23; h++) {
+    slots.push(`${String(h).padStart(2,'0')}:00`);
+    slots.push(`${String(h).padStart(2,'0')}:30`);
+  }
+
+  // Booked times from sessions
+  const daySessions = sessions.filter(s => s.days.includes(day));
+  const bookedSlots = new Set();
+  daySessions.forEach(sess => {
+    const [sh, sm] = sess.timeIST.split(':').map(Number);
+    const start = sh * 60 + sm;
+    // Mark session as 1 hour
+    for (let i = 0; i < 2; i++) {
+      const t = start + i * 30;
+      const hh = Math.floor(t / 60);
+      const mm = t % 60;
+      bookedSlots.add(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`);
+    }
+  });
+
+  // Blocked times for this day
+  const dayBlocks = blockedTimes.filter(b => b.day === day);
+  const blockedSlots = new Map(); // slot -> reason
+  dayBlocks.forEach(b => {
+    const [fh, fm] = b.from.split(':').map(Number);
+    const [th, tm] = b.to.split(':').map(Number);
+    let cur = fh * 60 + fm;
+    const end = th * 60 + tm;
+    while (cur < end) {
+      const hh = Math.floor(cur / 60);
+      const mm = cur % 60;
+      blockedSlots.set(`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`, b);
+      cur += 30;
+    }
+  });
+
+  grid.innerHTML = slots.map(slot => {
+    const [h] = slot.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hh = h % 12 === 0 ? 12 : h % 12;
+    const mm = slot.split(':')[1];
+    const label = `${hh}:${mm} ${ampm}`;
+
+    if (bookedSlots.has(slot)) {
+      const sess = daySessions.find(s => s.timeIST.slice(0,5) === slot);
+      const name = sess ? sess.name : 'Session';
+      return `<div class="avail-slot">
+        <div class="avail-slot-time">${label}</div>
+        <div class="avail-slot-bar booked">📅 ${name}</div>
+      </div>`;
+    } else if (blockedSlots.has(slot)) {
+      const block = blockedSlots.get(slot);
+      const deleteBtn = isAdmin ? `<button onclick="removeBlock(${block.id})" style="margin-left:auto;background:none;border:none;color:#ff4500;cursor:pointer;font-size:0.75rem;padding:0">✕ Remove</button>` : '';
+      return `<div class="avail-slot">
+        <div class="avail-slot-time">${label}</div>
+        <div class="avail-slot-bar blocked" style="justify-content:space-between">
+          <span>🚫 ${block.reason || 'Blocked'}</span>
+          ${deleteBtn}
+        </div>
+      </div>`;
+    } else {
+      return `<div class="avail-slot">
+        <div class="avail-slot-time">${label}</div>
+        <div class="avail-slot-bar available">Available</div>
+      </div>`;
+    }
+  }).join('');
+}
+
+async function addBlock() {
+  const day    = document.getElementById('block-day').value;
+  const from   = document.getElementById('block-from').value;
+  const to     = document.getElementById('block-to').value;
+  const reason = document.getElementById('block-reason').value.trim();
+
+  if (!day)  return toast('Please select a day.', true);
+  if (!from) return toast('Please select a start time.', true);
+  if (!to)   return toast('Please select an end time.', true);
+  if (from >= to) return toast('End time must be after start time.', true);
+
+  try {
+    const { data, error } = await sb.from('blocked_times').insert({ day, from_time: from, to_time: to, reason }).select();
+    if (error) throw error;
+    blockedTimes.push({ id: data[0].id, day, from, to, reason });
+    availSelectedDay = day;
+    document.getElementById('block-day').value = '';
+    document.getElementById('block-from').value = '';
+    document.getElementById('block-to').value = '';
+    document.getElementById('block-reason').value = '';
+    renderAvailability();
+    toast('Time blocked!');
+  } catch(e) { toast('Error blocking time.', true); console.error(e); }
+}
+
+async function removeBlock(id) {
+  try {
+    await sb.from('blocked_times').delete().eq('id', id);
+    blockedTimes = blockedTimes.filter(b => b.id !== id);
+    renderAvailGrid();
+    toast('Block removed.');
+  } catch(e) { toast('Error removing block.', true); console.error(e); }
 }
 
 // ============================================================
@@ -1703,13 +1971,15 @@ function openDayDetail(day) {
     const allWorkouts = [...new Set(stuSessions.flatMap(s => s.workouts))];
 
     const timeRows = stuSessions.map(sess => {
-      const localTime = istToLocalTime(sess.timeIST, stu.tzOffset);
-      const istTime = istTo12(sess.timeIST);
-      const localDay = shiftDay(day, sess.timeIST, stu.tzOffset);
+      const localTime    = istToLocalTime(sess.timeIST, stu.tzOffset);
+      const localEndTime = istToLocalEndTime(sess.timeIST, stu.tzOffset);
+      const istTime      = istTo12(sess.timeIST);
+      const istEndTime   = addOneHour(sess.timeIST);
+      const localDay     = shiftDay(day, sess.timeIST, stu.tzOffset);
       return `<div class="stu-time-row">
-        <span class="time-chip time-chip-local">${localDay} ${localTime} <span style="opacity:0.7">${stu.tzAbbr}</span></span>
+        <span class="time-chip time-chip-local">${localDay} ${localTime}–${localEndTime} <span style="opacity:0.7">${stu.tzAbbr}</span></span>
         <span class="time-arrow">→</span>
-        <span class="time-chip time-chip-ist">${day} ${istTime} IST</span>
+        <span class="time-chip time-chip-ist">${day} ${istTime}–${istEndTime} IST</span>
       </div>`;
     }).join('');
 
