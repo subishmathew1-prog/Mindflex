@@ -673,6 +673,57 @@
   .detail-workouts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
 
   /* Home feature cards */
+  .grid-slot {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    min-height: 48px;
+    margin-bottom: 2px;
+  }
+  .grid-time-label {
+    width: 70px;
+    flex-shrink: 0;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    padding-top: 0.3rem;
+    text-align: right;
+    padding-right: 0.75rem;
+  }
+  .grid-slot-bar {
+    flex: 1;
+    border-radius: 3px;
+    padding: 0.3rem 0.6rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.15rem;
+    cursor: default;
+    border: 1px solid transparent;
+  }
+  .grid-slot-bar.booked {
+    background: rgba(232,255,0,0.1);
+    border-color: rgba(232,255,0,0.3);
+    color: var(--accent);
+  }
+  .grid-slot-bar.blocked {
+    background: rgba(255,69,0,0.1);
+    border-color: rgba(255,69,0,0.3);
+    color: #ff6b35;
+  }
+  .grid-slot-bar.available {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+  .grid-slot-bar.available:hover {
+    border-color: var(--accent);
+    cursor: pointer;
+  }
   .sub-tab {
     padding: 0.5rem 1.25rem;
     background: transparent;
@@ -1005,14 +1056,50 @@
         <div class="days-overview-grid" id="days-overview-grid"></div>
       </div>
       <div id="schedule-detail" style="display:none">
-        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
           <button class="btn btn-sm" onclick="closeDayDetail()" style="font-size:0.8rem">← Back</button>
           <div>
             <div class="section-title" id="detail-day-title" style="margin-bottom:0"></div>
             <div class="section-subtitle" style="margin-bottom:0">All times shown in local timezone + IST</div>
           </div>
         </div>
+
+        <!-- Day detail sub-tabs -->
+        <div style="display:flex;gap:0.25rem;margin-bottom:1.25rem;border-bottom:1px solid var(--border)">
+          <button class="sub-tab active" id="daytab-students" onclick="showDayTab('students')">Students</button>
+          <button class="sub-tab" id="daytab-grid" onclick="showDayTab('grid')">Grid View</button>
+        </div>
+
+        <!-- Students list -->
         <div id="detail-student-list"></div>
+
+        <!-- Grid view -->
+        <div id="detail-grid-view" style="display:none">
+          <div id="day-schedule-grid"></div>
+          <div id="day-block-form" style="margin-top:1.5rem;display:none">
+            <div class="card">
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem">Block Personal Time</div>
+              <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+                <div class="form-group">
+                  <label>From</label>
+                  <input type="time" id="day-block-from">
+                </div>
+                <div class="form-group">
+                  <label>To</label>
+                  <input type="time" id="day-block-to">
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:1rem">
+                <label>Reason (optional)</label>
+                <input type="text" id="day-block-reason" placeholder="e.g. Personal appointment">
+              </div>
+              <div style="display:flex;gap:0.75rem">
+                <button class="btn btn-primary" onclick="addDayBlock()">Block Time</button>
+                <button class="btn btn-sm" onclick="document.getElementById('day-block-form').style.display='none'">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1943,10 +2030,109 @@ function renderDayOverview() {
   }).join('');
 }
 
+let currentDetailDay = null;
+
+function showDayTab(tab) {
+  document.getElementById('daytab-students').classList.toggle('active', tab === 'students');
+  document.getElementById('daytab-grid').classList.toggle('active', tab === 'grid');
+  document.getElementById('detail-student-list').style.display = tab === 'students' ? 'block' : 'none';
+  document.getElementById('detail-grid-view').style.display = tab === 'grid' ? 'block' : 'none';
+  if (tab === 'grid') renderDayGrid(currentDetailDay);
+}
+
+function renderDayGrid(day) {
+  const grid = document.getElementById('day-schedule-grid');
+  const blockForm = document.getElementById('day-block-form');
+  if (blockForm) blockForm.style.display = isAdmin ? 'block' : 'none';
+
+  // Build hourly slots 5:00 AM – 11:00 PM
+  const slots = [];
+  for (let h = 5; h <= 23; h++) {
+    const timeStr = `${String(h).padStart(2,'0')}:00`;
+    const label = formatTime(h, 0);
+    const endLabel = formatTime((h + 1) % 24, 0);
+
+    // Check if a session is booked at this hour
+    const daySessions = sessions.filter(s => s.days.includes(day));
+    const bookedSess = daySessions.find(s => {
+      const [sh] = s.timeIST.split(':').map(Number);
+      return sh === h;
+    });
+
+    // Check if blocked
+    const blocked = (blockedTimes || []).find(b =>
+      b.day === day && b.from === timeStr
+    );
+
+    let cls, content;
+    if (bookedSess) {
+      const studNames = bookedSess.studentIds
+        .map(id => students.find(s => s.id === id)?.name || '?')
+        .join(', ');
+      const wBadges = bookedSess.workouts.join(', ');
+      cls = 'booked';
+      content = `<strong>${label} – ${endLabel}</strong> &nbsp;·&nbsp; ${studNames} &nbsp;·&nbsp; <span style="opacity:0.7">${wBadges}</span>`;
+    } else if (blocked) {
+      cls = 'blocked';
+      content = `<strong>${label} – ${endLabel}</strong> &nbsp;·&nbsp; 🚫 ${blocked.reason || 'Blocked'}
+        ${isAdmin ? `<span onclick="removeDayBlock('${blocked.id}')" style="margin-left:0.5rem;cursor:pointer;opacity:0.6;font-size:0.7rem">✕ Remove</span>` : ''}`;
+    } else {
+      cls = 'available';
+      content = `<span style="opacity:0.4">${label} – ${endLabel} &nbsp; Available</span>`;
+    }
+
+    slots.push(`
+      <div class="grid-slot">
+        <div class="grid-time-label">${label}</div>
+        <div class="grid-slot-bar ${cls}"
+          ${cls === 'available' && isAdmin ? `onclick="prefillBlockTime('${timeStr}')"` : ''}>
+          ${content}
+        </div>
+      </div>`);
+  }
+
+  grid.innerHTML = slots.join('');
+}
+
+function prefillBlockTime(from) {
+  const [h] = from.split(':').map(Number);
+  const to = `${String(h + 1).padStart(2,'0')}:00`;
+  document.getElementById('day-block-from').value = from;
+  document.getElementById('day-block-to').value = to;
+  document.getElementById('day-block-form').style.display = 'block';
+  document.getElementById('day-block-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+function addDayBlock() {
+  const from   = document.getElementById('day-block-from').value;
+  const to     = document.getElementById('day-block-to').value;
+  const reason = document.getElementById('day-block-reason').value.trim();
+  if (!from || !to) return toast('Please set from and to times.', true);
+  const id = Date.now();
+  if (!blockedTimes) blockedTimes = [];
+  blockedTimes.push({ id, day: currentDetailDay, from, to, reason });
+  localStorage.setItem('blockedTimes', JSON.stringify(blockedTimes));
+  document.getElementById('day-block-form').style.display = 'none';
+  document.getElementById('day-block-reason').value = '';
+  renderDayGrid(currentDetailDay);
+  toast('Time blocked.');
+}
+
+function removeDayBlock(id) {
+  blockedTimes = blockedTimes.filter(b => String(b.id) !== String(id));
+  localStorage.setItem('blockedTimes', JSON.stringify(blockedTimes));
+  renderDayGrid(currentDetailDay);
+  toast('Block removed.');
+}
+
 function openDayDetail(day) {
+  currentDetailDay = day;
   document.getElementById('schedule-overview').style.display = 'none';
   document.getElementById('schedule-detail').style.display = 'block';
   document.getElementById('detail-day-title').innerHTML = `${day} <span style="color:var(--accent)">Schedule</span>`;
+
+  // Reset to students tab
+  showDayTab('students');
 
   const daySessions = sessions
     .filter(s => s.days.includes(day))
@@ -2004,6 +2190,7 @@ function openDayDetail(day) {
 function closeDayDetail() {
   document.getElementById('schedule-overview').style.display = 'block';
   document.getElementById('schedule-detail').style.display = 'none';
+  currentDetailDay = null;
 }
 
 // ============================================================
@@ -2312,6 +2499,9 @@ async function init() {
 
   // Pre-load data in background
   await loadAllData();
+
+  // Load blocked times from local storage
+  try { blockedTimes = JSON.parse(localStorage.getItem('blockedTimes') || '[]'); } catch(e) { blockedTimes = []; }
 
   // Try to autoplay music
   tryAutoplay();
