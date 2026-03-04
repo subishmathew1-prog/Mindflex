@@ -849,7 +849,7 @@
         <div class="card">
           <div class="form-group" style="margin-bottom:1rem">
             <label>Email</label>
-            <input type="email" id="login-email" placeholder="admin@email.com">
+            <input type="email" id="login-email" placeholder="you@email.com">
           </div>
           <div class="form-group" style="margin-bottom:1.5rem">
             <label>Password</label>
@@ -857,6 +857,35 @@
           </div>
           <button class="btn btn-primary" onclick="doLogin()" style="width:100%">Login</button>
           <div id="login-error" style="color:#ff4500;font-size:0.8rem;margin-top:0.75rem;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;display:none"></div>
+          <div style="text-align:center;margin-top:1.25rem;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:1px;color:var(--text-muted)">
+            Don't have an account?
+            <span onclick="showSignup()" style="color:var(--accent);cursor:pointer;margin-left:0.3rem">Create one</span>
+          </div>
+        </div>
+
+        <!-- Signup form (hidden by default) -->
+        <div id="signup-wrap" style="display:none;margin-top:1rem">
+          <div class="card">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:3px;color:var(--accent);margin-bottom:1rem">Create Account</div>
+            <div class="form-group" style="margin-bottom:1rem">
+              <label>Email</label>
+              <input type="email" id="signup-email" placeholder="you@email.com">
+            </div>
+            <div class="form-group" style="margin-bottom:1rem">
+              <label>Password</label>
+              <input type="password" id="signup-password" placeholder="Min. 6 characters">
+            </div>
+            <div class="form-group" style="margin-bottom:1.5rem">
+              <label>Confirm Password</label>
+              <input type="password" id="signup-confirm" placeholder="Re-enter password" onkeydown="if(event.key==='Enter')doSignup()">
+            </div>
+            <button class="btn btn-primary" onclick="doSignup()" style="width:100%">Create Account</button>
+            <div id="signup-error" style="color:#ff4500;font-size:0.8rem;margin-top:0.75rem;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;display:none"></div>
+            <div style="text-align:center;margin-top:1rem;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:1px;color:var(--text-muted)">
+              Already have an account?
+              <span onclick="hideSignup()" style="color:var(--accent);cursor:pointer;margin-left:0.3rem">Login</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1815,6 +1844,58 @@ function updateAuthUI() {
   const addSess = document.getElementById('admin-add-session');
   if (addStu) addStu.style.display = isAdmin ? 'block' : 'none';
   if (addSess) addSess.style.display = isAdmin ? 'block' : 'none';
+}
+
+function showSignup() {
+  document.getElementById('signup-wrap').style.display = 'block';
+  document.getElementById('signup-error').style.display = 'none';
+}
+
+function hideSignup() {
+  document.getElementById('signup-wrap').style.display = 'none';
+}
+
+async function doSignup() {
+  const email    = document.getElementById('signup-email').value.trim();
+  const password = document.getElementById('signup-password').value;
+  const confirm  = document.getElementById('signup-confirm').value;
+  const errEl    = document.getElementById('signup-error');
+  errEl.style.display = 'none';
+
+  if (!email)            return showSignupError('Please enter your email.');
+  if (!password)         return showSignupError('Please enter a password.');
+  if (password.length < 6) return showSignupError('Password must be at least 6 characters.');
+  if (password !== confirm) return showSignupError('Passwords do not match.');
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error) return showSignupError(error.message);
+
+  // Auto login after signup
+  currentUser = data.user;
+  isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+
+  // Notify admin of new signup
+  try {
+    await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+      from_name:  'MindFlex Website',
+      from_email: email,
+      phone:      'N/A',
+      goal:       'New user registration',
+      message:    `A new user has created an account on mindflex.live\n\nEmail: ${email}`,
+      to_email:   'Subishmathew1@gmail.com',
+    }, EJS_KEY);
+  } catch(e) { console.warn('Admin notification failed', e); }
+
+  updateAuthUI();
+  renderAll();
+  toast('Account created! Welcome.');
+  showPage('home');
+}
+
+function showSignupError(msg) {
+  const el = document.getElementById('signup-error');
+  el.textContent = msg;
+  el.style.display = 'block';
 }
 
 function renderAll() {
