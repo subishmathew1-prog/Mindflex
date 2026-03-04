@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindFlex Gym Academy</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --surface3: #222222;
+    --border: #2a2a2a;
+    --accent: #e8ff00;
+    --accent2: #ff4500;
+    --text: #f0f0f0;
+    --text-muted: #666;
+    --text-dim: #999;
+    --green: #00e676;
+    --blue: #00b0ff;
+    --purple: #d500f9;
+    --orange: #ff6d00;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-weight: 400;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* --- HEADER --- */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .logo span { color: var(--text-muted); font-size: 0.7rem; display: block; letter-spacing: 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; }
+
+  .nav-tabs {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .nav-tab {
+    padding: 0.5rem 1.25rem;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { color: var(--text); border-color: var(--border); }
+  .nav-tab.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
+  }
+
+  /* --- MAIN LAYOUT --- */
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* --- SECTION TITLE --- */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 4px;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+  .section-title span { color: var(--accent); }
+  .section-subtitle {
+    color: var(--text-muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+  }
+
+  /* --- CARD --- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+  }
+
+  /* --- FORM ELEMENTS --- */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+  .form-group label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .form-group input,
+  .form-group select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    padding: 0.6rem 0.75rem;
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: var(--accent);
+  }
+  .form-group select option { background: var(--surface2); }
+
+  .btn {
+    padding: 0.65rem 1.5rem;
+    border: none;
+    border-radius: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+  .btn-primary:hover { background: #d4eb00; transform: translateY(-1px); }
+  .btn-danger {
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid var(--accent2);
+    padding: 0.3rem 0.75rem;
+    font-size: 0.7rem;
+  }
+  .btn-danger:hover { background: var(--accent2); color: #fff; }
+  .btn-sm {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.7rem;
+    background: var(--surface3);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* --- DIVIDER --- */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1.5rem 0;
+  }
+
+  /* --- STUDENT TABLE --- */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #1a1a1a;
+    font-size: 0.9rem;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Timezone color badges */
+  .tz-IST  { background: rgba(232,255,0,0.12); color: var(--accent); border: 1px solid rgba(232,255,0,0.3); }
+  .tz-EST  { background: rgba(0,176,255,0.12); color: var(--blue); border: 1px solid rgba(0,176,255,0.3); }
+  .tz-CST  { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .tz-MST  { background: rgba(213,0,249,0.12); color: var(--purple); border: 1px solid rgba(213,0,249,0.3); }
+  .tz-PST  { background: rgba(255,109,0,0.12); color: var(--orange); border: 1px solid rgba(255,109,0,0.3); }
+  .tz-GMT  { background: rgba(240,240,240,0.1); color: #ccc; border: 1px solid rgba(240,240,240,0.2); }
+  .tz-CET  { background: rgba(255,69,0,0.12); color: var(--accent2); border: 1px solid rgba(255,69,0,0.3); }
+  .tz-JST  { background: rgba(240,100,100,0.12); color: #ff8080; border: 1px solid rgba(240,100,100,0.3); }
+  .tz-AEST { background: rgba(80,200,180,0.12); color: #50c8b4; border: 1px solid rgba(80,200,180,0.3); }
+  .tz-SGT  { background: rgba(180,120,255,0.12); color: #b478ff; border: 1px solid rgba(180,120,255,0.3); }
+  .tz-other{ background: rgba(100,100,100,0.12); color: #aaa; border: 1px solid rgba(100,100,100,0.3); }
+
+  /* Workout color badges */
+  .wt-Chest     { background: rgba(255,69,0,0.15);   color: #ff6b3d; border: 1px solid rgba(255,69,0,0.3); }
+  .wt-Biceps    { background: rgba(0,176,255,0.15);  color: var(--blue);   border: 1px solid rgba(0,176,255,0.3); }
+  .wt-Triceps   { background: rgba(213,0,249,0.15);  color: var(--purple); border: 1px solid rgba(213,0,249,0.3); }
+  .wt-Shoulder  { background: rgba(232,255,0,0.15);  color: var(--accent); border: 1px solid rgba(232,255,0,0.3); }
+  .wt-Back      { background: rgba(255,109,0,0.15);  color: var(--orange); border: 1px solid rgba(255,109,0,0.3); }
+  .wt-Cardio    { background: rgba(0,230,118,0.15);  color: var(--green);  border: 1px solid rgba(0,230,118,0.3); }
+  .wt-Abs       { background: rgba(240,80,80,0.15);  color: #f05050; border: 1px solid rgba(240,80,80,0.3); }
+  .wt-Forearms  { background: rgba(180,255,100,0.15);color: #b4ff64; border: 1px solid rgba(180,255,100,0.3); }
+  .wt-Legs      { background: rgba(100,200,255,0.15);color: #64c8ff; border: 1px solid rgba(100,200,255,0.3); }
+
+  /* --- SCHEDULE GRID --- */
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .day-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .day-header {
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .day-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+  .day-count {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .day-body { padding: 0.75rem; }
+
+  .session-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .session-block:last-child { margin-bottom: 0; }
+
+  .session-time-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+  .session-time {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+  .session-ist {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+  }
+
+  .session-students { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  .student-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    background: var(--surface3);
+    border-radius: 2px;
+  }
+  .student-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .student-info { flex: 1; min-width: 0; }
+  .student-name-text {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .student-times {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.2rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .time-chip {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    padding: 0.1rem 0.4rem;
+    border-radius: 2px;
+  }
+  .time-chip-local {
+    background: rgba(232,255,0,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(232,255,0,0.2);
+  }
+  .time-chip-ist {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .workout-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  .empty-day {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* --- STUDENT BLOCK (Day > Student > Session detail) --- */
+  .stu-block {
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+  .stu-block:last-child { margin-bottom: 0; }
+
+  .stu-block-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .stu-block-info { display: flex; flex-direction: column; gap: 0.2rem; }
+  .stu-block-name { font-size: 0.92rem; font-weight: 600; line-height: 1.2; }
+
+  .stu-sessions { padding: 0.5rem 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .stu-session-detail {
+    padding: 0.55rem 0.6rem;
+    background: var(--surface3);
+    border-radius: 2px;
+    border-left: 2px solid var(--border);
+  }
+
+  .stu-session-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+  }
+
+  .stu-session-meta { display: flex; flex-direction: column; gap: 0.35rem; }
+
+  .stu-time-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+  }
+  .time-icon { font-size: 0.7rem; }
+  .time-arrow { color: var(--text-muted); font-size: 0.65rem; }
+  .stu-workout-row { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  /* --- SESSION FORM --- */
+  .session-form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .checkbox-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+  }
+  .day-checkbox { display: none; }
+  .day-label {
+    padding: 0.35rem 0.75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .day-checkbox:checked + .day-label {
+    background: rgba(232,255,0,0.12);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .multi-select-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    min-height: 42px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+  .multi-select-wrap:focus-within { border-color: var(--accent); }
+
+  .ms-tag {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(232,255,0,0.1);
+    border: 1px solid rgba(232,255,0,0.25);
+    border-radius: 2px;
+    font-size: 0.75rem;
+    color: var(--accent);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+  .ms-tag button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem; line-height: 1; padding: 0; }
+  .ms-placeholder { color: var(--text-muted); font-size: 0.85rem; padding: 0.1rem 0.25rem; }
+
+  .ms-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    z-index: 200;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+  }
+  .ms-dropdown.open { display: block; }
+  .ms-option {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.1s;
+  }
+  .ms-option:hover { background: var(--surface2); }
+  .ms-option.selected { color: var(--accent); }
+  .ms-check { width: 12px; height: 12px; border: 1px solid var(--border); border-radius: 1px; flex-shrink: 0; }
+  .ms-option.selected .ms-check { background: var(--accent); border-color: var(--accent); }
+
+  /* --- TOAST --- */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 0.75rem 1.25rem;
+    border-radius: 3px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    z-index: 9999;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* --- SUMMARY BAR --- */
+  .summary-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1rem 1.5rem;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 0.25rem;
+  }
+
+  /* --- DAY OVERVIEW GRID --- */
+  .days-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .day-overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .day-overview-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    background: var(--surface2);
+  }
+  .day-overview-card.has-sessions {
+    border-color: #2a2a2a;
+  }
+  .day-overview-card.has-sessions:hover {
+    border-color: var(--accent);
+  }
+  .day-overview-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 3px;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .day-overview-card:hover .day-overview-name { color: var(--accent); }
+  .day-overview-meta {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .day-overview-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 0.3rem;
+    vertical-align: middle;
+  }
+  .day-overview-rest {
+    color: var(--text-muted);
+    font-size: 0.65rem;
+  }
+
+  /* --- DETAIL STUDENT CARDS --- */
+  .detail-student-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .detail-student-card:last-child { margin-bottom: 0; }
+
+  .detail-stu-info { flex: 1; min-width: 160px; }
+  .detail-stu-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .detail-times {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.4rem;
+  }
+  .detail-workouts { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+
+  /* Home feature cards */
+  .home-feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .home-feature-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .home-feature-icon { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .home-feature-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 2px; color: var(--text); margin-bottom: 0.25rem; }
+  .home-feature-card:hover .home-feature-title { color: var(--accent); }
+  .home-feature-desc { font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  @media (max-width: 680px) {
+    header { flex-direction: column; height: auto; padding: 1rem; gap: 0.75rem; }
+    main { padding: 1rem; }
+    .days-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MindFlex<span>Gym Academy · IST</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home')">Home</button>
+    <button class="nav-tab admin-tab" onclick="showPage('schedule')" style="display:none">Schedule</button>
+    <button class="nav-tab admin-tab" onclick="showPage('students')" style="display:none">Students</button>
+    <button class="nav-tab admin-tab" onclick="showPage('sessions')" style="display:none">Sessions</button>
+    <button class="nav-tab" onclick="showPage('login')" id="login-nav-tab">Login</button>
+  </div>
+</header>
+
+<!-- Login Modal (kept for compatibility but hidden) -->
+<div id="login-modal" style="display:none"></div>
+
+<div id="loading-bar" style="display:none;position:fixed;top:70px;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent) 0%,transparent 100%);z-index:999;animation:loadpulse 1s infinite alternate"></div>
+<style>@keyframes loadpulse { from { opacity:0.4; } to { opacity:1; } }</style>
+
+<main>
+
+  <!-- ========== HOME PAGE ========== -->
+  <div id="page-home" class="page active">
+    <div style="max-width:700px;margin:3rem auto;text-align:center;padding:0 1rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:4rem;letter-spacing:6px;line-height:1;margin-bottom:0.5rem">
+        Mind<span style="color:var(--accent)">Flex</span>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;letter-spacing:4px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2.5rem">Gym Academy · Train Smart. Train Strong.</div>
+
+      <!-- Book Free Class CTA -->
+      <div style="text-align:center;margin-bottom:2rem">
+        <button class="btn btn-primary" onclick="showPage('book')" style="font-size:1.1rem;padding:1rem 2.5rem;letter-spacing:3px;font-family:'Bebas Neue',sans-serif">
+          🏋️ Book Your Free Class
+        </button>
+      </div>
+
+      <div style="margin-bottom:1.5rem;border-radius:6px;overflow:hidden;aspect-ratio:9/16;max-width:400px;margin-left:auto;margin-right:auto">
+        <iframe
+          src="https://streamable.com/e/mwv500?muted=1&autoplay=1&nocontrols=1"
+          frameborder="0"
+          allow="autoplay; fullscreen"
+          allowfullscreen
+          style="width:100%;height:100%;display:block;border:none">
+        </iframe>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2rem;margin-bottom:1.5rem;text-align:left">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--accent);margin-bottom:1rem">Welcome</div>
+        <p style="color:var(--text-dim);line-height:1.8;font-size:0.95rem;margin-bottom:1rem">
+          Strength isn't just built in muscles — it's built in mindset.
+        </p>
+        <p style="color:var(--text-dim);line-height:1.8;font-size:0.95rem;margin-bottom:1rem">
+          Our live online training school combines expert strength programming with real-time coaching and individualized attention. You are never just another name on a screen. Every session is interactive, every correction is intentional, and every goal matters.
+        </p>
+        <p style="color:var(--text-dim);line-height:1.8;font-size:0.95rem;margin-bottom:1rem">
+          We design structured programs tailored to your personal objectives — whether that's gaining muscle, increasing functional strength, improving mobility, or transforming your body composition.
+        </p>
+        <p style="color:var(--text-dim);line-height:1.8;font-size:0.95rem;margin-bottom:1rem">
+          With focused coaching, small-group energy, and individual accountability, you'll build strength that lasts — physically and mentally.
+        </p>
+        <p style="color:var(--accent);line-height:1.8;font-size:0.95rem;font-weight:600;font-style:italic">
+          This is where commitment meets coaching. This is where transformation begins.
+        </p>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem">
+        <div class="home-feature-card" onclick="showPage('login')">
+          <div class="home-feature-icon">⚡</div>
+          <div class="home-feature-title">Admin</div>
+          <div class="home-feature-desc">Login to manage students & sessions</div>
+        </div>
+        <div class="home-feature-card" onclick="showPage('schedule')">
+          <div class="home-feature-icon">📅</div>
+          <div class="home-feature-title">Schedule</div>
+          <div class="home-feature-desc">View weekly class schedule</div>
+        </div>
+      </div>
+
+      <div id="home-admin-banner" style="display:none;background:rgba(232,255,0,0.08);border:1px solid rgba(232,255,0,0.25);border-radius:4px;padding:1rem 1.25rem;text-align:left">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:0.5rem">⚡ Admin Access</div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="showPage('students')">Manage Students</button>
+          <button class="btn btn-sm" onclick="showPage('sessions')">Manage Sessions</button>
+          <button class="btn btn-danger" onclick="doLogout()" style="margin-left:auto">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== LOGIN PAGE ========== -->
+  <div id="page-login" class="page">
+    <div style="max-width:400px;margin:4rem auto;padding:0 1rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--accent);margin-bottom:0.25rem">Admin Login</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2rem">MindFlex Gym Academy</div>
+
+      <div id="login-logged-in" style="display:none;background:rgba(232,255,0,0.08);border:1px solid rgba(232,255,0,0.25);border-radius:4px;padding:1.5rem;text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--accent);margin-bottom:0.5rem">⚡ Logged In</div>
+        <div id="login-user-email" style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1.25rem"></div>
+        <button class="btn btn-danger" onclick="doLogout()">Logout</button>
+      </div>
+
+      <div id="login-form-wrap">
+        <div class="card">
+          <div class="form-group" style="margin-bottom:1rem">
+            <label>Email</label>
+            <input type="email" id="login-email" placeholder="admin@email.com">
+          </div>
+          <div class="form-group" style="margin-bottom:1.5rem">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+          </div>
+          <button class="btn btn-primary" onclick="doLogin()" style="width:100%">Login</button>
+          <div id="login-error" style="color:#ff4500;font-size:0.8rem;margin-top:0.75rem;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;display:none"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== BOOK PAGE ========== -->
+  <div id="page-book" class="page">
+    <div style="max-width:500px;margin:3rem auto;padding:0 1rem">
+      <button class="btn btn-sm" onclick="showPage('home')" style="margin-bottom:1.5rem;font-size:0.8rem">← Back to Home</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:2.5rem;letter-spacing:4px;color:var(--accent);margin-bottom:0.25rem">Book Your Free Class</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);margin-bottom:2rem">MindFlex Gym Academy · No commitment required</div>
+
+      <div id="book-success" style="display:none;background:rgba(232,255,0,0.08);border:1px solid rgba(232,255,0,0.25);border-radius:4px;padding:2rem;text-align:center">
+        <div style="font-size:2rem;margin-bottom:0.75rem">✅</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:2px;color:var(--accent);margin-bottom:0.5rem">Request Sent!</div>
+        <div style="color:var(--text-dim);font-size:0.9rem;line-height:1.6">We've received your request and will be in touch shortly to confirm your free class.</div>
+        <button class="btn btn-primary" onclick="resetBookForm()" style="margin-top:1.25rem">Book Another</button>
+      </div>
+
+      <div id="book-form-wrap" class="card">
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Full Name *</label>
+          <input type="text" id="book-name" placeholder="e.g. Riya Sharma">
+        </div>
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Email Address *</label>
+          <input type="email" id="book-email" placeholder="e.g. riya@email.com">
+        </div>
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Phone / WhatsApp</label>
+          <input type="tel" id="book-phone" placeholder="e.g. +91 98765 43210">
+        </div>
+        <div class="form-group" style="margin-bottom:1rem">
+          <label>Your Goal</label>
+          <select id="book-goal">
+            <option value="">Select your primary goal...</option>
+            <option>Build Muscle</option>
+            <option>Lose Weight</option>
+            <option>Improve Strength</option>
+            <option>Improve Mobility</option>
+            <option>General Fitness</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:1.5rem">
+          <label>Anything else you'd like us to know?</label>
+          <textarea id="book-message" placeholder="e.g. preferred time, experience level, questions..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);padding:0.65rem 0.75rem;font-family:Barlow,sans-serif;font-size:0.9rem;resize:vertical;min-height:90px;box-sizing:border-box"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="submitBooking()" style="width:100%;font-size:1rem;padding:0.85rem;font-family:'Bebas Neue',sans-serif;letter-spacing:2px">Send Request</button>
+        <div id="book-error" style="color:#ff4500;font-size:0.8rem;margin-top:0.75rem;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SCHEDULE PAGE ========== -->
+  <div id="page-schedule" class="page active">
+    <!-- Day overview grid -->
+    <div id="schedule-overview">
+      <div class="section-title">Weekly <span>Schedule</span></div>
+      <div class="section-subtitle">Select a day to view the full schedule</div>
+      <div class="days-overview-grid" id="days-overview-grid"></div>
+    </div>
+
+    <!-- Day detail panel (hidden until a day is clicked) -->
+    <div id="schedule-detail" style="display:none">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+        <button class="btn btn-sm" onclick="closeDayDetail()" style="font-size:0.8rem">← Back</button>
+        <div>
+          <div class="section-title" id="detail-day-title" style="margin-bottom:0"></div>
+          <div class="section-subtitle" style="margin-bottom:0">All times shown in local timezone + IST</div>
+        </div>
+      </div>
+      <div id="detail-student-list"></div>
+    </div>
+  </div>
+
+  <!-- ========== STUDENTS PAGE ========== -->
+  <div id="page-students" class="page">
+    <div class="section-title">Student <span>Roster</span></div>
+    <div class="section-subtitle">Manage enrolled students and their timezones</div>
+
+    <div id="admin-add-student" style="display:none;margin-bottom:1.5rem">
+      <div class="card">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem">Add New Student</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="stu-name" placeholder="e.g. Riya Sharma">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="stu-email" placeholder="e.g. riya@email.com">
+        </div>
+        <div class="form-group">
+          <label>Timezone</label>
+          <select id="stu-tz"></select>
+        </div>
+        <div class="form-group" style="justify-content:flex-end">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary" onclick="addStudent()">+ Add Student</button>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Timezone</th>
+              <th>UTC Offset</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="student-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== SESSIONS PAGE ========== -->
+  <div id="page-sessions" class="page">
+    <div class="section-title">Class <span>Sessions</span></div>
+    <div class="section-subtitle">Schedule sessions with workouts and enrolled students</div>
+
+    <div id="admin-add-session" style="display:none">
+    <div class="session-form-card">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:1rem">Add New Session</div>
+
+      <div class="form-group" style="margin-bottom:1rem">
+        <label>Students</label>
+        <div class="multi-select-wrap" id="student-ms-wrap" onclick="toggleDropdown('student')">
+          <span class="ms-placeholder" id="student-ph">Select students...</span>
+          <div class="ms-dropdown" id="student-dropdown" onclick="event.stopPropagation()"></div>
+        </div>
+      </div>
+
+      <div class="form-grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+        <div class="form-group">
+          <label>Time (IST)</label>
+          <input type="time" id="sess-time">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>Days of Week</label>
+          <div class="checkbox-grid" id="day-checkboxes"></div>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:0.75rem">
+        <label>Workouts</label>
+        <div class="multi-select-wrap" id="workout-ms-wrap" onclick="toggleDropdown('workout')">
+          <span class="ms-placeholder" id="workout-ph">Select workouts...</span>
+          <div class="ms-dropdown" id="workout-dropdown" onclick="event.stopPropagation()"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <button class="btn btn-primary" onclick="addSession()">+ Add Session</button>
+      </div>
+    </div>
+    </div>
+
+    <!-- Sessions list -->
+    <div id="sessions-list"></div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// DATA STORE
+// ============================================================
+const TIMEZONES = [
+  { label: 'IST — India Standard Time', abbr: 'IST', offset: 5.5 },
+  { label: 'EST — Eastern Standard Time', abbr: 'EST', offset: -5 },
+  { label: 'EDT — Eastern Daylight Time', abbr: 'EDT', offset: -4 },
+  { label: 'CST — Central Standard Time', abbr: 'CST', offset: -6 },
+  { label: 'CDT — Central Daylight Time', abbr: 'CDT', offset: -5 },
+  { label: 'MST — Mountain Standard Time', abbr: 'MST', offset: -7 },
+  { label: 'MDT — Mountain Daylight Time', abbr: 'MDT', offset: -6 },
+  { label: 'PST — Pacific Standard Time', abbr: 'PST', offset: -8 },
+  { label: 'PDT — Pacific Daylight Time', abbr: 'PDT', offset: -7 },
+  { label: 'GMT — Greenwich Mean Time', abbr: 'GMT', offset: 0 },
+  { label: 'BST — British Summer Time', abbr: 'BST', offset: 1 },
+  { label: 'CET — Central European Time', abbr: 'CET', offset: 1 },
+  { label: 'CEST — Central European Summer', abbr: 'CEST', offset: 2 },
+  { label: 'EET — Eastern European Time', abbr: 'EET', offset: 2 },
+  { label: 'GST — Gulf Standard Time', abbr: 'GST', offset: 4 },
+  { label: 'PKT — Pakistan Standard Time', abbr: 'PKT', offset: 5 },
+  { label: 'BST — Bangladesh Standard Time', abbr: 'BST+6', offset: 6 },
+  { label: 'ICT — Indochina Time', abbr: 'ICT', offset: 7 },
+  { label: 'SGT — Singapore Time', abbr: 'SGT', offset: 8 },
+  { label: 'CST — China Standard Time', abbr: 'CST+8', offset: 8 },
+  { label: 'JST — Japan Standard Time', abbr: 'JST', offset: 9 },
+  { label: 'AEST — Australian Eastern', abbr: 'AEST', offset: 10 },
+  { label: 'NZST — New Zealand Standard', abbr: 'NZST', offset: 12 },
+];
+
+const WORKOUT_TYPES = [
+  'Chest','Biceps','Triceps','Shoulder','Back','Cardio','Abs','Forearms','Legs'
+];
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+const IST_OFFSET = 5.5; // hours
+
+// ── Seed data (used only on first ever load) ──────────────────
+const SEED_STUDENTS = [
+  { name: 'Arjun Mehta',     email: 'arjun@mail.com',  tzAbbr: 'IST', tzOffset: 5.5 },
+  { name: 'Sarah Collins',   email: 'sarah@mail.com',  tzAbbr: 'EST', tzOffset: -5  },
+  { name: 'Kenji Yamamoto',  email: 'kenji@mail.com',  tzAbbr: 'JST', tzOffset: 9   },
+  { name: 'Lena Fischer',    email: 'lena@mail.com',   tzAbbr: 'CET', tzOffset: 1   },
+  { name: 'Miguel Santos',   email: 'miguel@mail.com', tzAbbr: 'PST', tzOffset: -8  },
+];
+
+// ── Supabase config ───────────────────────────────────────────
+const SB_URL = 'https://kybhdjqzrzqyoxffocdy.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5YmhkanF6cnpxeW94ZmZvY2R5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODk3MjEsImV4cCI6MjA4ODE2NTcyMX0.7zX7k3R2w0uVYFqrnDQ_3HHffyDRQllhaE1l7-qw1UY';
+
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+async function sbGet(table) {
+  const { data, error } = await sb.from(table).select('*').order('id');
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function sbInsert(table, body) {
+  const { data, error } = await sb.from(table).insert(body).select();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function sbUpdate(table, id, body) {
+  const { data, error } = await sb.from(table).update(body).eq('id', id).select();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function sbDelete(table, id) {
+  const { error } = await sb.from(table).delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+// ── Row mappers (DB columns ↔ app shape) ─────────────────────
+function mapStudent(row) {
+  return { id: row.id, name: row.name, email: row.email || '', tzAbbr: row.tz_abbr, tzOffset: parseFloat(row.tz_offset), avatarUrl: row.avatar_url || '' };
+}
+function mapSession(row) {
+  return { id: row.id, name: row.name, timeIST: row.time_ist, days: row.days, workouts: row.workouts, studentIds: row.student_ids || [] };
+}
+
+// ── In-memory state (loaded from Supabase on init) ────────────
+let students = [];
+let sessions = [];
+
+async function loadAllData() {
+  setLoading(true);
+  try {
+    const [stuRows, sessRows] = await Promise.all([ sbGet('students'), sbGet('sessions') ]);
+    students = stuRows.map(mapStudent);
+    sessions = sessRows.map(mapSession);
+  } catch(e) {
+    console.error(e);
+    toast('Could not connect to database: ' + e.message, true);
+  }
+  setLoading(false);
+}
+
+function setLoading(on) {
+  const el = document.getElementById('loading-bar');
+  if (el) el.style.display = on ? 'block' : 'none';
+}
+
+// Multi-select state
+let selectedWorkouts = [];
+let selectedStudentIds = [];
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function istToLocalTime(istTime, tzOffset) {
+  const [h, m] = istTime.split(':').map(Number);
+  let totalMin = h * 60 + m;
+  const diffMin = (tzOffset - IST_OFFSET) * 60;
+  totalMin += diffMin;
+  // wrap
+  totalMin = ((totalMin % 1440) + 1440) % 1440;
+  const lh = Math.floor(totalMin / 60);
+  const lm = totalMin % 60;
+  return formatTime(lh, lm);
+}
+
+function formatTime(h, m) {
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return `${hh}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+function istTo12(istTime) {
+  const [h, m] = istTime.split(':').map(Number);
+  return formatTime(h, m);
+}
+
+// Returns the weekday name after applying timezone offset to an IST time+day
+function shiftDay(dayName, istTime, tzOffset) {
+  const [h, m] = istTime.split(':').map(Number);
+  const totalISTMin = h * 60 + m;
+  const diffMin = (tzOffset - IST_OFFSET) * 60;
+  const totalLocalMin = totalISTMin + diffMin;
+  const dayShift = Math.floor(totalLocalMin / 1440) || (totalLocalMin < 0 ? -1 : totalLocalMin >= 1440 ? 1 : 0);
+  if (dayShift === 0) return dayName;
+  const idx = DAYS.indexOf(dayName);
+  return DAYS[((idx + dayShift) % 7 + 7) % 7];
+}
+
+function getTzBadgeClass(abbr) {
+  const map = { IST:'tz-IST', EST:'tz-EST', EDT:'tz-EST', CST:'tz-CST', CDT:'tz-CST', MST:'tz-MST', MDT:'tz-MST', PST:'tz-PST', PDT:'tz-PST', GMT:'tz-GMT', BST:'tz-GMT', CET:'tz-CET', CEST:'tz-CET', JST:'tz-JST', AEST:'tz-AEST', SGT:'tz-SGT' };
+  return map[abbr] || 'tz-other';
+}
+
+function getWorkoutBadgeClass(w) {
+  return `wt-${w.replace(/\s+/g,'')}`;
+}
+
+function avatarColor(name) {
+  const colors = ['#e8ff00','#00e676','#00b0ff','#d500f9','#ff6d00','#ff4500','#ff8080','#50c8b4','#b478ff'];
+  let hash = 0;
+  for (let c of name) hash = ((hash << 5) - hash) + c.charCodeAt(0);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function initials(name) {
+  return name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+}
+
+function avatarHTML(stu, size=32) {
+  const color = avatarColor(stu.name);
+  if (stu.avatarUrl) {
+    return `<img src="${stu.avatarUrl}" alt="${stu.name}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;border:1px solid ${color}55;flex-shrink:0">`;
+  }
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:${Math.round(size*0.35)}px;font-weight:700;flex-shrink:0;background:${color}22;color:${color};border:1px solid ${color}55">${initials(stu.name)}</div>`;
+}
+
+function toast(msg, error=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = error ? '#ff4500' : 'var(--accent)';
+  t.style.color = error ? '#ff4500' : 'var(--accent)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// PAGE SWITCHING
+// ============================================================
+async function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const pages = ['home','schedule','students','sessions','login','book'];
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    t.classList.toggle('active', pages[i] === id);
+  });
+  if (id === 'schedule' || id === 'students' || id === 'sessions') {
+    await loadAllData();
+  }
+  if (id === 'schedule') renderSchedule();
+  if (id === 'students') renderStudents();
+  if (id === 'sessions') renderSessionsList();
+}
+
+// ============================================================
+// STUDENTS
+// ============================================================
+function initTzSelect() {
+  const sel = document.getElementById('stu-tz');
+  TIMEZONES.forEach(tz => {
+    const o = document.createElement('option');
+    o.value = tz.abbr;
+    o.dataset.offset = tz.offset;
+    o.textContent = tz.label;
+    sel.appendChild(o);
+  });
+}
+
+async function addStudent() {
+  const name = document.getElementById('stu-name').value.trim();
+  const email = document.getElementById('stu-email').value.trim();
+  const sel = document.getElementById('stu-tz');
+  const tzAbbr = sel.value;
+  const tzOffset = parseFloat(sel.selectedOptions[0].dataset.offset);
+  if (!name) return toast('Please enter a student name.', true);
+  try {
+    const rows = await sbInsert('students', { name, email, tz_abbr: tzAbbr, tz_offset: tzOffset });
+    students.push(mapStudent(rows[0]));
+    document.getElementById('stu-name').value = '';
+    document.getElementById('stu-email').value = '';
+    toast('Student added!');
+    renderStudents();
+  } catch(e) { toast('Error adding student.', true); console.error(e); }
+}
+
+async function removeStudent(id) {
+  try {
+    await sbDelete('students', id);
+    students = students.filter(s => s.id !== id);
+    // remove from sessions
+    for (const sess of sessions) {
+      if (sess.studentIds.includes(id)) {
+        const newIds = sess.studentIds.filter(sid => sid !== id);
+        await sbUpdate('sessions', sess.id, { student_ids: newIds });
+        sess.studentIds = newIds;
+      }
+    }
+    renderStudents();
+    toast('Student removed.');
+  } catch(e) { toast('Error removing student.', true); console.error(e); }
+}
+
+function renderStudents() {
+  const tbody = document.getElementById('student-tbody');
+  if (!students.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem;font-family:Barlow Condensed,sans-serif;letter-spacing:2px;text-transform:uppercase;font-size:0.8rem">No students yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = students.map((s, i) => {
+    const cls = getTzBadgeClass(s.tzAbbr);
+    const sign = s.tzOffset >= 0 ? '+' : '';
+    const avatarCell = `
+      <div style="display:flex;align-items:center;gap:0.6rem">
+        ${avatarHTML(s, 34)}
+        <div>
+          <div style="font-weight:600">${s.name}</div>
+          ${isAdmin ? `<label style="cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase">
+            📷 Upload
+            <input type="file" accept="image/*" style="display:none" onchange="uploadAvatar(${s.id}, this)">
+          </label>` : ''}
+        </div>
+      </div>`;
+    return `<tr>
+      <td style="color:var(--text-muted);font-family:Barlow Condensed,sans-serif">${i+1}</td>
+      <td>${avatarCell}</td>
+      <td style="color:var(--text-dim)">${s.email || '—'}</td>
+      <td><span class="badge ${cls}">${s.tzAbbr}</span></td>
+      <td style="font-family:Barlow Condensed,sans-serif;color:var(--text-dim)">UTC${sign}${s.tzOffset}</td>
+      <td>${isAdmin ? `<button class="btn btn-danger" onclick="removeStudent(${s.id})">Remove</button>` : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function uploadAvatar(studentId, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) return toast('Image must be under 2MB.', true);
+
+  try {
+    toast('Uploading...');
+    // Convert to base64 data URL and store directly in DB
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      await sbUpdate('students', studentId, { avatar_url: dataUrl });
+      const stu = students.find(s => s.id === studentId);
+      if (stu) stu.avatarUrl = dataUrl;
+      renderStudents();
+      renderSchedule();
+      toast('Avatar updated!');
+    };
+    reader.readAsDataURL(file);
+  } catch(err) {
+    toast('Error uploading avatar.', true);
+    console.error(err);
+  }
+}
+function initDayCheckboxes() {
+  const wrap = document.getElementById('day-checkboxes');
+  DAYS.forEach(d => {
+    const id = 'day-'+d;
+    wrap.innerHTML += `<input type="checkbox" class="day-checkbox" id="${id}" value="${d}"><label class="day-label" for="${id}">${d.slice(0,3)}</label>`;
+  });
+}
+
+function initWorkoutDropdown() {
+  const dd = document.getElementById('workout-dropdown');
+  dd.innerHTML = WORKOUT_TYPES.map(w =>
+    `<div class="ms-option" data-value="${w}" onclick="toggleWorkout('${w}')">
+      <div class="ms-check"></div>${w}
+    </div>`
+  ).join('');
+}
+
+function refreshStudentDropdown() {
+  const dd = document.getElementById('student-dropdown');
+  dd.innerHTML = students.map(s =>
+    `<div class="ms-option" data-value="${s.id}" onclick="toggleStudent(${s.id})">
+      <div class="ms-check"></div>${s.name}
+      <span style="margin-left:auto;font-size:0.7rem;color:var(--text-muted)">${s.tzAbbr}</span>
+    </div>`
+  ).join('');
+  // re-apply selection state
+  selectedStudentIds.forEach(id => {
+    const el = dd.querySelector(`[data-value="${id}"]`);
+    if (el) el.classList.add('selected');
+  });
+}
+
+function toggleDropdown(which) {
+  const id = which+'-dropdown';
+  const dd = document.getElementById(id);
+  // close others
+  document.querySelectorAll('.ms-dropdown').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
+  if (which === 'student') refreshStudentDropdown();
+  dd.classList.toggle('open');
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click', e => {
+  if (!e.target.closest('.multi-select-wrap')) {
+    document.querySelectorAll('.ms-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+
+function toggleWorkout(w) {
+  const idx = selectedWorkouts.indexOf(w);
+  if (idx === -1) selectedWorkouts.push(w); else selectedWorkouts.splice(idx,1);
+  const el = document.querySelector(`#workout-dropdown [data-value="${w}"]`);
+  if (el) el.classList.toggle('selected', selectedWorkouts.includes(w));
+  renderWorkoutTags();
+}
+
+function removeWorkout(w) {
+  selectedWorkouts = selectedWorkouts.filter(x => x !== w);
+  const el = document.querySelector(`#workout-dropdown [data-value="${w}"]`);
+  if (el) el.classList.remove('selected');
+  renderWorkoutTags();
+}
+
+function renderWorkoutTags() {
+  const wrap = document.getElementById('workout-ms-wrap');
+  const ph = document.getElementById('workout-ph');
+  const dd = document.getElementById('workout-dropdown');
+  // remove old tags
+  wrap.querySelectorAll('.ms-tag').forEach(t => t.remove());
+  ph.style.display = selectedWorkouts.length ? 'none' : '';
+  selectedWorkouts.forEach(w => {
+    const tag = document.createElement('div');
+    tag.className = 'ms-tag';
+    tag.innerHTML = `${w}<button onclick="removeWorkout('${w}');event.stopPropagation()">×</button>`;
+    wrap.insertBefore(tag, dd);
+  });
+}
+
+function toggleStudent(id) {
+  const idx = selectedStudentIds.indexOf(id);
+  if (idx === -1) selectedStudentIds.push(id); else selectedStudentIds.splice(idx,1);
+  const el = document.querySelector(`#student-dropdown [data-value="${id}"]`);
+  if (el) el.classList.toggle('selected', selectedStudentIds.includes(id));
+  renderStudentTags();
+}
+
+function removeStudentTag(id) {
+  selectedStudentIds = selectedStudentIds.filter(x => x !== id);
+  const el = document.querySelector(`#student-dropdown [data-value="${id}"]`);
+  if (el) el.classList.remove('selected');
+  renderStudentTags();
+}
+
+function renderStudentTags() {
+  const wrap = document.getElementById('student-ms-wrap');
+  const ph = document.getElementById('student-ph');
+  const dd = document.getElementById('student-dropdown');
+  wrap.querySelectorAll('.ms-tag').forEach(t => t.remove());
+  ph.style.display = selectedStudentIds.length ? 'none' : '';
+  selectedStudentIds.forEach(id => {
+    const stu = students.find(s => s.id === id);
+    if (!stu) return;
+    const tag = document.createElement('div');
+    tag.className = 'ms-tag';
+    tag.innerHTML = `${stu.name}<button onclick="removeStudentTag(${id});event.stopPropagation()">×</button>`;
+    wrap.insertBefore(tag, dd);
+  });
+}
+
+async function addSession() {
+  const time = document.getElementById('sess-time').value;
+  const days = [...document.querySelectorAll('.day-checkbox:checked')].map(c=>c.value);
+  if (!time) return toast('Session time required.', true);
+  if (!days.length) return toast('Select at least one day.', true);
+  if (!selectedWorkouts.length) return toast('Select at least one workout.', true);
+  const name = `Session ${istTo12(time)}`;
+  try {
+    const rows = await sbInsert('sessions', {
+      name, time_ist: time, days, workouts: [...selectedWorkouts], student_ids: [...selectedStudentIds]
+    });
+    sessions.push(mapSession(rows[0]));
+    // reset form
+    document.getElementById('sess-time').value = '';
+    document.querySelectorAll('.day-checkbox').forEach(c => c.checked = false);
+    selectedWorkouts = [];
+    selectedStudentIds = [];
+    renderWorkoutTags();
+    renderStudentTags();
+    document.getElementById('workout-dropdown').querySelectorAll('.ms-option').forEach(o => o.classList.remove('selected'));
+    toast('Session added!');
+    renderSessionsList();
+  } catch(e) { toast('Error adding session.', true); console.error(e); }
+}
+
+async function removeSession(id) {
+  try {
+    await sbDelete('sessions', id);
+    sessions = sessions.filter(s => s.id !== id);
+    renderSessionsList();
+    toast('Session removed.');
+  } catch(e) { toast('Error removing session.', true); console.error(e); }
+}
+
+function editSession(id) {
+  const sess = sessions.find(s => s.id === id);
+  if (!sess) return;
+
+  // Collapse any open editor first
+  document.querySelectorAll('.sess-editor').forEach(el => el.remove());
+  document.querySelectorAll('.sess-edit-btn').forEach(el => el.textContent = 'Edit');
+
+  const card = document.getElementById('sess-card-' + id);
+  const btn = card.querySelector('.sess-edit-btn');
+  btn.textContent = 'Cancel';
+
+  // Build day checkboxes
+  const dayCbs = DAYS.map(d => {
+    const chk = sess.days.includes(d) ? 'checked' : '';
+    return `<input type="checkbox" class="day-checkbox edit-day-cb-${id}" id="ed-${id}-${d}" value="${d}" ${chk}>
+            <label class="day-label" for="ed-${id}-${d}">${d.slice(0,3)}</label>`;
+  }).join('');
+
+  // Build workout checkboxes
+  const wCbs = WORKOUT_TYPES.map(w => {
+    const chk = sess.workouts.includes(w) ? 'checked' : '';
+    return `<input type="checkbox" class="day-checkbox edit-wt-cb-${id}" id="ew-${id}-${w}" value="${w}" ${chk}>
+            <label class="day-label" for="ew-${id}-${w}">${w}</label>`;
+  }).join('');
+
+  // Build student checkboxes
+  const sCbs = students.map(s => {
+    const chk = sess.studentIds.includes(s.id) ? 'checked' : '';
+    return `<input type="checkbox" class="day-checkbox edit-stu-cb-${id}" id="es-${id}-${s.id}" value="${s.id}" ${chk}>
+            <label class="day-label" for="es-${id}-${s.id}">${s.name}</label>`;
+  }).join('');
+
+  const editor = document.createElement('div');
+  editor.className = 'sess-editor';
+  editor.innerHTML = `
+    <div class="divider" style="margin:1rem 0"></div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.75rem">Edit Session</div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-bottom:0.75rem">
+      <div class="form-group">
+        <label>Session Name</label>
+        <input type="text" id="ed-name-${id}" value="${sess.name}">
+      </div>
+      <div class="form-group">
+        <label>Time (IST)</label>
+        <input type="time" id="ed-time-${id}" value="${sess.timeIST}">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:0.75rem">
+      <label>Days</label>
+      <div class="checkbox-grid">${dayCbs}</div>
+    </div>
+    <div class="form-group" style="margin-bottom:0.75rem">
+      <label>Workouts</label>
+      <div class="checkbox-grid">${wCbs}</div>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem">
+      <label>Students</label>
+      <div class="checkbox-grid">${sCbs}</div>
+    </div>
+    <div style="display:flex;gap:0.5rem">
+      <button class="btn btn-primary" onclick="saveEditSession(${id})">Save Changes</button>
+      <button class="btn btn-sm" onclick="cancelEditSession(${id})">Cancel</button>
+    </div>`;
+
+  card.appendChild(editor);
+}
+
+function cancelEditSession(id) {
+  const card = document.getElementById('sess-card-' + id);
+  card.querySelector('.sess-editor')?.remove();
+  card.querySelector('.sess-edit-btn').textContent = 'Edit';
+}
+
+async function saveEditSession(id) {
+  const name = document.getElementById('ed-name-' + id).value.trim();
+  const time = document.getElementById('ed-time-' + id).value;
+  const days = [...document.querySelectorAll(`.edit-day-cb-${id}:checked`)].map(c => c.value);
+  const workouts = [...document.querySelectorAll(`.edit-wt-cb-${id}:checked`)].map(c => c.value);
+  const studentIds = [...document.querySelectorAll(`.edit-stu-cb-${id}:checked`)].map(c => parseInt(c.value));
+
+  if (!name) return toast('Session name required.', true);
+  if (!time) return toast('Time required.', true);
+  if (!days.length) return toast('Select at least one day.', true);
+  if (!workouts.length) return toast('Select at least one workout.', true);
+
+  try {
+    await sbUpdate('sessions', id, { name, time_ist: time, days, workouts, student_ids: studentIds });
+    const idx = sessions.findIndex(s => s.id === id);
+    if (idx !== -1) sessions[idx] = { id, name, timeIST: time, days, workouts, studentIds };
+    renderSessionsList();
+    toast('Session updated!');
+  } catch(e) { toast('Error updating session.', true); console.error(e); }
+}
+
+function renderSessionsList() {
+  const wrap = document.getElementById('sessions-list');
+  if (!sessions.length) {
+    wrap.innerHTML = '<div class="card" style="text-align:center;color:var(--text-muted);font-family:Barlow Condensed,sans-serif;letter-spacing:2px;text-transform:uppercase;font-size:0.8rem;padding:2rem">No sessions yet</div>';
+    return;
+  }
+  wrap.innerHTML = sessions.map(sess => {
+    const studNames = sess.studentIds.map(id => students.find(s=>s.id===id)?.name || '?').join(', ') || '—';
+    const wBadges = sess.workouts.map(w => `<span class="badge ${getWorkoutBadgeClass(w)}">${w}</span>`).join(' ');
+    const dayBadges = sess.days.map(d => `<span class="badge" style="background:var(--surface3);color:var(--text-dim);border:1px solid var(--border)">${d.slice(0,3)}</span>`).join(' ');
+    return `<div class="card" id="sess-card-${sess.id}" style="margin-bottom:0.75rem">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div style="flex:1">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;color:var(--text)">${sess.name}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--accent);letter-spacing:2px;margin-bottom:0.5rem">IST ${istTo12(sess.timeIST)}</div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.5rem">${dayBadges}</div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.4rem">${wBadges}</div>
+          <div style="font-size:0.82rem;color:var(--text-muted)">Students: <span style="color:var(--text-dim)">${studNames}</span></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-shrink:0">
+          ${isAdmin ? `<button class="btn btn-sm sess-edit-btn" onclick="editSession(${sess.id})">Edit</button>
+          <button class="btn btn-danger" onclick="removeSession(${sess.id})">Delete</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// SCHEDULE RENDER  —  Overview (day cards) + Detail (click)
+// ============================================================
+function renderSchedule() {
+  renderDayOverview();
+  closeDayDetail();
+}
+
+function renderDayOverview() {
+  const grid = document.getElementById('days-overview-grid');
+  grid.innerHTML = DAYS.map(day => {
+    const daySessions = sessions.filter(s => s.days.includes(day));
+    const studentCount = new Set(daySessions.flatMap(s => s.studentIds)).size;
+    const hasSessions = daySessions.length > 0;
+    return `<div class="day-overview-card ${hasSessions ? 'has-sessions' : ''}" onclick="openDayDetail('${day}')">
+      <div class="day-overview-name">${day}</div>
+      ${hasSessions
+        ? `<div class="day-overview-meta"><span class="day-overview-dot"></span>${daySessions.length} session${daySessions.length!==1?'s':''}</div>
+           <div class="day-overview-meta" style="margin-top:0.2rem">${studentCount} student${studentCount!==1?'s':''}</div>`
+        : `<div class="day-overview-rest">Rest day</div>`}
+    </div>`;
+  }).join('');
+}
+
+function openDayDetail(day) {
+  document.getElementById('schedule-overview').style.display = 'none';
+  document.getElementById('schedule-detail').style.display = 'block';
+  document.getElementById('detail-day-title').innerHTML = `${day} <span style="color:var(--accent)">Schedule</span>`;
+
+  const daySessions = sessions
+    .filter(s => s.days.includes(day))
+    .sort((a, b) => a.timeIST.localeCompare(b.timeIST));
+
+  const studentIdSet = new Set(daySessions.flatMap(s => s.studentIds));
+  const dayStudents = [...studentIdSet]
+    .map(id => students.find(s => s.id === id))
+    .filter(Boolean)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const list = document.getElementById('detail-student-list');
+
+  if (!dayStudents.length) {
+    list.innerHTML = '<div class="empty-day" style="padding:3rem">No students scheduled for this day.</div>';
+    return;
+  }
+
+  list.innerHTML = dayStudents.map(stu => {
+    const tzCls = getTzBadgeClass(stu.tzAbbr);
+    const stuSessions = daySessions.filter(sess => sess.studentIds.includes(stu.id));
+    const allWorkouts = [...new Set(stuSessions.flatMap(s => s.workouts))];
+
+    const timeRows = stuSessions.map(sess => {
+      const localTime = istToLocalTime(sess.timeIST, stu.tzOffset);
+      const istTime = istTo12(sess.timeIST);
+      const localDay = shiftDay(day, sess.timeIST, stu.tzOffset);
+      return `<div class="stu-time-row">
+        <span class="time-chip time-chip-local">${localDay} ${localTime} <span style="opacity:0.7">${stu.tzAbbr}</span></span>
+        <span class="time-arrow">→</span>
+        <span class="time-chip time-chip-ist">${day} ${istTime} IST</span>
+      </div>`;
+    }).join('');
+
+    const wBadges = allWorkouts.map(w =>
+      `<span class="badge ${getWorkoutBadgeClass(w)}" style="font-size:0.65rem">${w}</span>`
+    ).join('');
+
+    return `<div class="detail-student-card">
+      ${avatarHTML(stu, 44)}
+      <div class="detail-stu-info">
+        <div class="detail-stu-name">
+          ${stu.name}
+          <span class="badge ${tzCls}" style="font-size:0.6rem">${stu.tzAbbr}</span>
+        </div>
+        <div class="detail-times">${timeRows}</div>
+        <div class="detail-workouts">${wBadges}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function closeDayDetail() {
+  document.getElementById('schedule-overview').style.display = 'block';
+  document.getElementById('schedule-detail').style.display = 'none';
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+const ADMIN_EMAIL = 'subishmathew1@gmail.com';
+const ADMIN_EMAILS = ['subishmathew1@gmail.com', 'sppratheeksh1@gmail.com'];
+let currentUser = null;
+let isAdmin = false;
+
+function handleAuthBtn() {
+  if (currentUser) doLogout();
+  else showPage('login');
+}
+
+function openLoginModal() { showPage('login'); }
+function closeLoginModal() { showPage('home'); }
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.textContent = 'Invalid email or password.';
+    errEl.style.display = 'block';
+    return;
+  }
+  currentUser = data.user;
+  isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+  updateAuthUI();
+  renderAll();
+  toast(isAdmin ? 'Welcome, Admin!' : 'Logged in.');
+  showPage('home');
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  isAdmin = false;
+  updateAuthUI();
+  renderAll();
+  toast('Logged out.');
+  showPage('home');
+}
+
+function updateAuthUI() {
+  // Admin-only nav tabs
+  document.querySelectorAll('.admin-tab').forEach(t => t.style.display = isAdmin ? '' : 'none');
+
+  // Login tab label
+  const loginTab = document.getElementById('login-nav-tab');
+  if (loginTab) loginTab.textContent = currentUser ? 'Logout' : 'Login';
+  if (loginTab) loginTab.onclick = currentUser ? doLogout : () => showPage('login');
+
+  // Login page state
+  const formWrap = document.getElementById('login-form-wrap');
+  const loggedInEl = document.getElementById('login-logged-in');
+  const emailEl = document.getElementById('login-user-email');
+  if (formWrap) formWrap.style.display = currentUser ? 'none' : 'block';
+  if (loggedInEl) loggedInEl.style.display = currentUser ? 'block' : 'none';
+  if (emailEl && currentUser) emailEl.textContent = currentUser.email;
+
+  // Home admin banner
+  const banner = document.getElementById('home-admin-banner');
+  if (banner) banner.style.display = isAdmin ? 'block' : 'none';
+
+  // Show/hide admin-only form sections
+  const addStu = document.getElementById('admin-add-student');
+  const addSess = document.getElementById('admin-add-session');
+  if (addStu) addStu.style.display = isAdmin ? 'block' : 'none';
+  if (addSess) addSess.style.display = isAdmin ? 'block' : 'none';
+}
+
+function renderAll() {
+  renderSchedule();
+  renderStudents();
+  renderSessionsList();
+}
+
+// ============================================================
+// BOOKING — EmailJS
+// ============================================================
+// EmailJS setup — replace these with your own after creating
+// a free account at emailjs.com
+const EJS_SERVICE  = 'YOUR_SERVICE_ID';
+const EJS_TEMPLATE = 'YOUR_TEMPLATE_ID';
+const EJS_KEY      = 'YOUR_PUBLIC_KEY';
+
+async function submitBooking() {
+  const name    = document.getElementById('book-name').value.trim();
+  const email   = document.getElementById('book-email').value.trim();
+  const phone   = document.getElementById('book-phone').value.trim();
+  const goal    = document.getElementById('book-goal').value;
+  const message = document.getElementById('book-message').value.trim();
+  const errEl   = document.getElementById('book-error');
+
+  errEl.style.display = 'none';
+  if (!name)  return showBookError('Please enter your name.');
+  if (!email) return showBookError('Please enter your email.');
+
+  const btn = document.querySelector('#book-form-wrap .btn-primary');
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+
+  try {
+    await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+      from_name:    name,
+      from_email:   email,
+      phone:        phone || 'Not provided',
+      goal:         goal  || 'Not specified',
+      message:      message || 'No message',
+      to_email:     'Subishmathew1@gmail.com',
+    }, EJS_KEY);
+
+    document.getElementById('book-form-wrap').style.display = 'none';
+    document.getElementById('book-success').style.display = 'block';
+  } catch(e) {
+    console.error(e);
+    showBookError('Failed to send. Please try again or contact us directly.');
+    btn.textContent = 'Send Request';
+    btn.disabled = false;
+  }
+}
+
+function showBookError(msg) {
+  const el = document.getElementById('book-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function resetBookForm() {
+  document.getElementById('book-name').value = '';
+  document.getElementById('book-email').value = '';
+  document.getElementById('book-phone').value = '';
+  document.getElementById('book-goal').value = '';
+  document.getElementById('book-message').value = '';
+  document.getElementById('book-error').style.display = 'none';
+  document.getElementById('book-success').style.display = 'none';
+  document.getElementById('book-form-wrap').style.display = 'block';
+  const btn = document.querySelector('#book-form-wrap .btn-primary');
+  btn.textContent = 'Send Request';
+  btn.disabled = false;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  initTzSelect();
+  initDayCheckboxes();
+  initWorkoutDropdown();
+
+  // Restore session if already logged in
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    isAdmin = ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+  }
+  updateAuthUI();
+
+  // Start on home page
+  showPage('home');
+
+  // Pre-load data in background
+  await loadAllData();
+}
+
+init();
+</script>
+</body>
+</html>
