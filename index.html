@@ -1036,6 +1036,25 @@
 
 </main>
 
+<!-- Music Player -->
+<div id="music-player" style="position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:0.6rem 1.5rem;display:flex;align-items:center;gap:1rem;z-index:998">
+  <button id="music-btn" onclick="toggleMusic()" style="width:36px;height:36px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem">▶</button>
+  <div style="flex:1;min-width:0">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:2px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">High Energy Workout Mix</div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase">MindFlex Gym Academy</div>
+  </div>
+  <input type="range" id="music-vol" min="0" max="1" step="0.05" value="0.5" oninput="setVolume(this.value)" style="width:80px;accent-color:var(--accent)">
+  <span style="font-size:0.75rem">🔊</span>
+</div>
+
+<audio id="bg-music" loop>
+  <source src="https://subishmathew1-prog.github.io/Mindflex/infinitencsmusic-high-energy-dance-track-for-fitness-royalty-free-workout-music-363205.mp3" type="audio/mpeg">
+</audio>
+
+<style>
+main { padding-bottom: 70px; }
+</style>
+
 <div id="toast"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
@@ -1841,6 +1860,49 @@ function resetBookForm() {
 }
 
 // ============================================================
+// MUSIC PLAYER
+// ============================================================
+let musicPlaying = false;
+
+function toggleMusic() {
+  const audio = document.getElementById('bg-music');
+  const btn = document.getElementById('music-btn');
+  if (musicPlaying) {
+    audio.pause();
+    btn.textContent = '▶';
+    musicPlaying = false;
+  } else {
+    audio.play();
+    btn.textContent = '⏸';
+    musicPlaying = true;
+  }
+}
+
+function setVolume(val) {
+  document.getElementById('bg-music').volume = val;
+}
+
+function tryAutoplay() {
+  const audio = document.getElementById('bg-music');
+  const btn = document.getElementById('music-btn');
+  audio.volume = 0.5;
+  audio.play().then(() => {
+    btn.textContent = '⏸';
+    musicPlaying = true;
+  }).catch(() => {
+    // Browser blocked autoplay — wait for first user interaction
+    const startOnClick = () => {
+      audio.play().then(() => {
+        btn.textContent = '⏸';
+        musicPlaying = true;
+        document.removeEventListener('click', startOnClick);
+      }).catch(() => {});
+    };
+    document.addEventListener('click', startOnClick);
+  });
+}
+
+// ============================================================
 // INIT
 // ============================================================
 async function init() {
@@ -1870,9 +1932,12 @@ async function init() {
 
   // Pre-load data in background
   await loadAllData();
+
+  // Try to autoplay music
+  tryAutoplay();
 }
 
 init();
 </script>
 </body>
-</html>
+</html><!DOCTYPE html>
