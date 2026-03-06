@@ -824,7 +824,7 @@
 <main>
 
   <!-- ========== HOME PAGE ========== -->
-  <div id="page-home" class="page active">
+  <div id="page-home" class="page active" style="opacity:0;transition:opacity 0.4s ease">
     <div style="max-width:700px;margin:3rem auto;text-align:center;padding:0 1rem 4rem 1rem">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:4rem;letter-spacing:6px;line-height:1;margin-bottom:0.5rem">
         Mind<span style="color:var(--accent)">Flex</span>
@@ -838,7 +838,7 @@
         </button>
       </div>
 
-      <div style="margin-bottom:1.5rem;border-radius:6px;overflow:hidden;aspect-ratio:16/9;max-width:400px;margin-left:auto;margin-right:auto">
+      <div style="margin-bottom:1.5rem;border-radius:6px;overflow:hidden;aspect-ratio:16/9;width:100%">
         <iframe
           src="https://www.youtube.com/embed/9YTYKE01Q8E?autoplay=1&loop=1&playlist=9YTYKE01Q8E&mute=1&controls=0"
           frameborder="0"
@@ -1474,8 +1474,13 @@ function toast(msg, error=false) {
 // PAGE SWITCHING
 // ============================================================
 async function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    if (p.id === 'page-home') p.style.opacity = '0';
+  });
+  const target = document.getElementById('page-'+id);
+  target.classList.add('active');
+  if (id === 'home') setTimeout(() => target.style.opacity = '1', 50);
   const pages = ['home','schedule','students','sessions','login','book'];
   document.querySelectorAll('.nav-tab').forEach((t, i) => {
     t.classList.toggle('active', pages[i] === id);
@@ -2563,6 +2568,12 @@ async function init() {
 
   // Pre-load data in background
   await loadAllData();
+
+  // Fade in home page
+  setTimeout(() => {
+    const home = document.getElementById('page-home');
+    if (home) home.style.opacity = '1';
+  }, 300);
 
   // Load blocked times from local storage
   try { blockedTimes = JSON.parse(localStorage.getItem('blockedTimes') || '[]'); } catch(e) { blockedTimes = []; }
